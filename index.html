@@ -1,0 +1,2161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PDF Merge and Split</title>
+<meta name="description" content="Merge, split, reorder and rotate PDF pages entirely in your browser. Parses the real cross reference chain, names every file it refuses, and lists per file the structures it does not carry across before you download.">
+<link rel="canonical" href="https://0xelitesystem.github.io/pdf-merge-and-split/">
+<meta property="og:title" content="PDF Merge and Split">
+<meta property="og:description" content="Merge, split, reorder and rotate PDF pages entirely in your browser. Parses the real cross reference chain, names every file it refuses, and lists per file the structures it does not carry across before you download.">
+<meta property="og:url" content="https://0xelitesystem.github.io/pdf-merge-and-split/">
+<meta property="og:type" content="website">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "PDF Merge and Split",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any (browser)",
+  "url": "https://0xelitesystem.github.io/pdf-merge-and-split/",
+  "description": "Merge, split, reorder and rotate PDF pages entirely in your browser. Parses the real cross reference chain, names every file it refuses, and lists per file the structures it does not carry across before you download.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "author": { "@type": "Person", "name": "0xelitesystem", "url": "https://elitesystem.ai" }
+}
+</script>
+<style>
+:root{
+  --bg:#e8ebef; --surface:#f7f9fb; --surface-2:#dde3ea;
+  --ink:#14171a; --ink-soft:#41474e;
+  --accent:#2d6b00; --ok:#1c6b3a; --warn:#8a4d00; --err:#a82d14;
+  --border:#c3cad2; --control:#6f7883;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#0a0a0a; --surface:#16181a; --surface-2:#202426;
+    --ink:#f2f4f6; --ink-soft:#b7bec6;
+    --accent:#d4ff3a; --ok:#7fe3a4; --warn:#ffc266; --err:#ff9d87;
+    --border:#2c3134; --control:#7d858c;
+  }
+}
+*{box-sizing:border-box}
+html{color-scheme:light dark}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font:16px/1.55 ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+}
+main{max-width:64rem;margin:0 auto;padding:1.5rem 1rem 4rem}
+h1{font-size:1.7rem;line-height:1.2;margin:0 0 .4rem}
+h2{font-size:1.15rem;margin:2rem 0 .6rem;border-bottom:1px solid var(--border);padding-bottom:.3rem}
+p{margin:.5rem 0}
+.lede{color:var(--ink-soft);max-width:54rem}
+a{color:var(--accent)}
+a:hover{text-decoration:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1rem;margin:1rem 0}
+.drop{background:var(--surface);border:2px dashed var(--control);border-radius:12px;padding:1.6rem 1rem;text-align:center}
+.drop.over{border-color:var(--accent);background:var(--surface-2)}
+label{display:inline-block;font-weight:600}
+.hint{color:var(--ink-soft);font-size:.87rem;margin:.35rem 0 0}
+input[type=file]{display:block;margin:.6rem auto 0;max-width:100%;color:var(--ink);background:var(--surface-2);border:1px solid var(--control);border-radius:8px;padding:.5rem}
+input[type=text]{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:.9rem;background:var(--surface-2);color:var(--ink);border:1px solid var(--control);border-radius:6px;padding:.35rem .5rem;min-width:10rem}
+button{font:inherit;font-size:.88rem;background:var(--surface-2);color:var(--ink);border:1px solid var(--control);border-radius:6px;padding:.32rem .6rem;cursor:pointer}
+button:hover{background:var(--surface)}
+button.primary{background:var(--accent);color:var(--bg);border-color:var(--accent);font-weight:700;padding:.5rem 1.1rem;font-size:1rem}
+button.primary:hover{filter:brightness(1.08)}
+/* Disabled controls carry no opacity, because opacity composites the label
+   against the background and drops it below AA. Muted token plus a dashed
+   border plus the cursor plus aria-disabled, all of them, never colour alone. */
+button[disabled],button[aria-disabled=true]{cursor:not-allowed;background:var(--surface-2);color:var(--ink-soft);border:1px dashed var(--border);filter:none;font-weight:600}
+ul.plain{list-style:none;margin:.6rem 0;padding:0}
+ul.plain>li{background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:.6rem .7rem;margin:.45rem 0}
+.row{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.grow{flex:1 1 14rem;min-width:0}
+.fname{font-weight:700;word-break:break-all}
+.struct{color:var(--ink-soft);font-size:.85rem;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;word-break:break-word}
+.tag{font-weight:700;font-size:.78rem;letter-spacing:.04em;padding:.05rem .32rem;border-radius:4px;border:1px solid currentColor;white-space:nowrap}
+.t-ok{color:var(--ok)}
+.t-warn{color:var(--warn)}
+.t-err{color:var(--err)}
+.line{margin:.3rem 0;font-size:.9rem}
+.line.err{color:var(--err)}
+.line.warn{color:var(--warn)}
+.line.ok{color:var(--ok)}
+table{border-collapse:collapse;width:100%;margin:.6rem 0;font-size:.9rem}
+caption{text-align:left;color:var(--ink-soft);font-size:.85rem;padding-bottom:.35rem}
+th,td{border:1px solid var(--border);padding:.4rem .55rem;text-align:left;vertical-align:top}
+th{background:var(--surface-2)}
+#results{min-height:2rem}
+#stresults{margin:.6rem 0}
+.count{color:var(--ink-soft);font-size:.88rem;font-weight:400}
+footer{margin-top:2.5rem;border-top:1px solid var(--border);padding-top:.9rem;color:var(--ink-soft);font-size:.87rem}
+code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:.87em;background:var(--surface-2);padding:.05rem .25rem;border-radius:4px}
+.dl{display:inline-block;margin:.5rem 0;font-weight:700}
+</style>
+</head>
+<body>
+<main>
+<h1>PDF Merge and Split</h1>
+<p class="lede">Merge, split, reorder and rotate PDF pages in this tab. The bytes never leave your machine: there is no upload, no server and no network call of any kind in this page. Every file this tool cannot handle is refused by name, and every structure it does not carry across is listed per file before you download anything.</p>
+
+<div class="card">
+  <div class="drop" id="drop">
+    <label for="picker">Choose PDF files, or drop them on this box</label>
+    <input type="file" id="picker" accept="application/pdf,.pdf" multiple>
+    <p class="hint">Files stack in the order you add them. Merging is selecting all pages of two or more files. Splitting is selecting a subset of one.</p>
+  </div>
+</div>
+
+<div class="card">
+  <h2 style="margin-top:0">Before you add a file</h2>
+  <p>This tool <strong>refuses rather than guesses</strong>. On a corpus of 302 real PDF files collected from one working machine, deduplicated by SHA-256, and filtered to exclude every file this tool had written itself, 276 built, which is 91.4 percent of the corpus and 98.9 percent of the 279 that were not encrypted. Of the rest, 23 were refused as encrypted, 2 as not a PDF, and 1 because a compressed stream could not be inflated. Two further refusal classes, damaged or absent cross reference data and damaged page tree, are implemented and did not occur in that corpus. The full table is further down this page.</p>
+  <p>It is a <strong>page level</strong> tool, so it does not carry everything. <strong>Bookmarks and form fields are not carried over.</strong> Neither are named destinations, page labels, tagged structure, optional content groups or document metadata. Every one of those that your file actually contains is named in that file's entry below, before you build anything. Page level annotations are carried.</p>
+</div>
+
+<h2>Files <span class="count" id="fileCount">(none added)</span></h2>
+<ul class="plain" id="files"></ul>
+
+<h2>Output page order <span class="count" id="planCount">(0 pages selected)</span></h2>
+<ul class="plain" id="plan"></ul>
+
+<div class="row" style="gap:.8rem;margin:1rem 0">
+  <button class="primary" id="build" disabled aria-disabled="true">Build PDF</button>
+  <button id="clear">Remove all files</button>
+</div>
+
+<h2>Results</h2>
+<div id="results" role="status" aria-live="polite"></div>
+
+<h2>Self test</h2>
+<p class="hint">Runs the parser and the writer against fixtures built into this page. It includes positive controls: assertions that are deliberately wrong and must be reported as correctly rejected. A checker that has never produced a failure has not been tested.</p>
+<p><button id="selftest">Run self test</button></p>
+<div id="stresults" role="status" aria-live="polite"></div>
+
+<h2>What this tool refuses, and why</h2>
+<p>Damaged cross reference data is <strong>refused, not reconstructed</strong>. This tool never scans a file for <code>obj</code> patterns to guess a cross reference table back into existence. If a file is refused here, qpdf and pdftk are strictly more capable and will very likely handle it: both do encryption, damaged cross reference reconstruction and linearization, none of which this tool attempts. The reason to use this page instead is that the bytes never leave the machine, not that the feature set is larger.</p>
+
+<table>
+  <caption>The five refusal classes, with counts from a corpus of 302 real PDF files collected from one working machine, deduplicated by SHA-256, and filtered to exclude every file this tool had written itself, run through this exact engine. 276 of the 302 built, which is 91.4 percent of the corpus and 98.9 percent of the 279 that were not encrypted. Two classes did not occur in that corpus and are listed with a count of zero rather than left out.</caption>
+  <thead>
+    <tr><th scope="col">Refusal class</th><th scope="col">Files in that corpus</th><th scope="col">What triggers it</th></tr>
+  </thead>
+  <tbody>
+    <tr><th scope="row">encrypted</th><td>23 of 302</td><td><code>/Encrypt</code> present in the trailer. No empty password decrypt is attempted.</td></tr>
+    <tr><th scope="row">not a PDF</th><td>2 of 302</td><td>The first 1024 bytes do not contain <code>%PDF-</code>, the file is zero bytes, or the file is larger than the 536,870,912 bytes this page will hold.</td></tr>
+    <tr><th scope="row">stream could not be inflated</th><td>1 of 302</td><td>A compressed stream still throws after the raw deflate and endstream trim fallbacks. A truncated stream is refused, never decoded partly. This covers the payload of a cross reference stream too, so a hybrid revision whose <code>/XRefStm</code> sits at a readable offset but will not inflate is refused under this class rather than the damaged cross reference one.</td></tr>
+    <tr><th scope="row">damaged or absent cross reference data</th><td>0 of 302</td><td>No <code>startxref</code> found, an offset outside the file, an offset pointing at neither the <code>xref</code> keyword nor a cross reference stream object, a hybrid revision whose <code>/XRefStm</code> is not an offset inside the file or does not point at a cross reference stream, or an object that is not at the offset the cross reference data claims.</td></tr>
+    <tr><th scope="row">damaged page tree</th><td>0 of 302</td><td>The catalog has no <code>/Pages</code>, or the page walk yields zero pages.</td></tr>
+  </tbody>
+</table>
+<p class="hint">All 276 outputs were read back with pypdf 6.12.2, which did not write any of them: page counts matched on 276 of 276 with no warnings raised. pypdf is a recovery tolerant reader and so is more forgiving than a strict structural checker. qpdf, pdftk, mutool and Ghostscript are not installed on the machine these numbers came from and none of them was run.</p>
+
+<h2>What is not carried across</h2>
+<p>This is a page level tool. It copies the transitive closure of the page objects you select and builds a fresh catalog and page tree around them. Anything that hangs off the source catalog rather than off a page is <strong>not</strong> carried, and every one present in your file is named in that file's entry above before you build:</p>
+<ul>
+  <li><strong>bookmarks not carried over</strong> (the catalog <code>/Outlines</code> tree)</li>
+  <li><strong>form fields not carried over</strong> (the catalog <code>/AcroForm</code> dictionary)</li>
+  <li><strong>named destinations not carried over</strong> (<code>/Names</code>)</li>
+  <li><strong>page labels not carried over</strong> (<code>/PageLabels</code>)</li>
+  <li><strong>tagged structure not carried over</strong> (<code>/StructTreeRoot</code>, so reading order for assistive technology is lost)</li>
+  <li><strong>optional content groups not carried over</strong> (<code>/OCProperties</code>, so layers may all render)</li>
+  <li><strong>document metadata not carried over</strong> (<code>/Info</code> and the catalog <code>/Metadata</code> stream)</li>
+</ul>
+<p>Page level annotations (<code>/Annots</code>) <strong>are</strong> carried. A link annotation whose destination points at a page you did not include has that destination replaced with <code>null</code>, and the build result counts how many were dropped.</p>
+
+<footer>
+  <p>Single file, no dependencies, no network. Built by <a href="https://elitesystem.ai">0xelitesystem</a>. MIT licensed. Independent and unaffiliated with any named project or vendor.</p>
+</footer>
+</main>
+<script>
+/*ENGINE-START*/
+'use strict';
+
+/* Fixtures for the self test. Base64 string literals. Nothing is loaded over a network. */
+const FX = {
+  HYBRID: 'JVBERi0xLjcKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9Db3VudCAxIC9LaWRzIFszIDAgUl0gPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAyMDAgMjAwXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA1IDAgUiA+PiA+PiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDIwIDEwMCBUZCAoU1RBTEUpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvRm9udCAvU3VidHlwZSAvVHlwZTEgL0Jhc2VGb250IC9IZWx2ZXRpY2EgPj4KZW5kb2JqCnhyZWYKMCA2CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY0IDAwMDAwIG4gCjAwMDAwMDAxMjEgMDAwMDAgbiAKMDAwMDAwMDI0NyAwMDAwMCBuIAowMDAwMDAwMzMzIDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNiAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDAzCiUlRU9GCjQgMCBvYmoKPDwgL0xlbmd0aCAzNyA+PgpzdHJlYW0KQlQgL0YxIDI0IFRmIDIwIDEwMCBUZCAoRlJFU0gpIFRqIEVUCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvWFJlZiAvVyBbMSA0IDJdIC9JbmRleCBbNCAxXSAvU2l6ZSA3IC9Sb290IDEgMCBSIC9QcmV2IDQwMyAvRmlsdGVyIC9GbGF0ZURlY29kZSAvTGVuZ3RoIDE1ID4+CnN0cmVhbQp42mNkYGDyYmAAAAD0AE4KZW5kc3RyZWFtCmVuZG9iagp4cmVmCjQgMQowMDAwMDAwMjQ3IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNyAvUm9vdCAxIDAgUiAvUHJldiA0MDMgL1hSZWZTdG0gNjcyID4+CnN0YXJ0eHJlZgo4MjQKJSVFT0YK',
+  ANNOTS: 'JVBERi0xLjcKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9Db3VudCAxIC9LaWRzIFszIDAgUl0gL01lZGlhQm94IFswIDAgMzAwIDMwMF0gPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvQ29udGVudHMgNCAwIFIgL0Fubm90cyBbNSAwIFIgNiAwIFJdID4+CmVuZG9iago0IDAgb2JqCjw8IC9MZW5ndGggMzIgPj4Kc3RyZWFtCjAgMCAxIFJHIDQgdyAyMCAyMCAxMDAgMTAwIHJlIFMKZW5kc3RyZWFtCmVuZG9iago1IDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvU3F1YXJlIC9SZWN0IFsyMCAyMCAxMjAgMTIwXSAvRiA0ID4+CmVuZG9iago2IDAgb2JqCjw8IC9UeXBlIC9Bbm5vdCAvU3VidHlwZSAvU3F1YXJlIC9SZWN0IFs0MCA0MCAxNDAgMTQwXSAvRiA0ID4+CmVuZG9iagp4cmVmCjAgNwowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTUgMDAwMDAgbiAKMDAwMDAwMDA2NCAwMDAwMCBuIAowMDAwMDAwMTQ1IDAwMDAwIG4gCjAwMDAwMDAyMzAgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAowMDAwMDAwMzg5IDAwMDAwIG4gCnRyYWlsZXIKPDwgL1NpemUgNyAvUm9vdCAxIDAgUiA+PgpzdGFydHhyZWYKNDY3CiUlRU9GCg==',
+  ENCRYPTED: 'JVBERi0xLjcKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9Db3VudCAxIC9LaWRzIFszIDAgUl0gPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAyMDAgMjAwXSA+PgplbmRvYmoKNCAwIG9iago8PCAvRmlsdGVyIC9TdGFuZGFyZCAvViAxIC9SIDIgL1AgLTEgPj4KZW5kb2JqCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZiAKMDAwMDAwMDAxNSAwMDAwMCBuIAowMDAwMDAwMDY0IDAwMDAwIG4gCjAwMDAwMDAxMjEgMDAwMDAgbiAKMDAwMDAwMDE5MiAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDUgL1Jvb3QgMSAwIFIgL0VuY3J5cHQgNCAwIFIgPj4Kc3RhcnR4cmVmCjI0NwolJUVPRgo=',
+  NOXREF: 'JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyA+PgplbmRvYmoKMiAwIG9iago8PCAvVHlwZSAvUGFnZXMgL0NvdW50IDAgPj4KZW5kb2JqCiUlRU9GCg==',
+  PRED12: 'JVBERi0xLjUKJeLjz9MKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9Db3VudCAyIC9LaWRzIFszIDAgUiA1IDAgUl0gL01lZGlhQm94IFswIDAgNDAwIDQwMF0gPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvQ29udGVudHMgNCAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL0xlbmd0aCAzMiA+PgpzdHJlYW0KMSAwIDAgUkcgMyB3IDEwIDEwIDIwMCAyMDAgcmUgUwplbmRzdHJlYW0KZW5kb2JqCjUgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvQ29udGVudHMgNiAwIFIgL1JvdGF0ZSA5MCA+PgplbmRvYmoKNiAwIG9iago8PCAvTGVuZ3RoIDMyID4+CnN0cmVhbQowIDEgMCBSRyAzIHcgMzAgMzAgMTUwIDE1MCByZSBTCmVuZHN0cmVhbQplbmRvYmoKNyAwIG9iago8PCAvVHlwZSAvWFJlZiAvU2l6ZSA4IC9XIFsxIDMgMl0gL1Jvb3QgMSAwIFIgL0ZpbHRlciAvRmxhdGVEZWNvZGUgL0RlY29kZVBhcm1zIDw8IC9QcmVkaWN0b3IgMTIgL0NvbHVtbnMgNiA+PiAvTGVuZ3RoIDQyID4+CnN0cmVhbQp42mNiAIL//5kYGRj4GRmZgBxDBgYQFQ6h7MEUYyCE5wWhAhkYAIr2A9UKZW5kc3RyZWFtCmVuZG9iagpzdGFydHhyZWYKNDUwCiUlRU9GCg==',
+  /* objects 1, 2 and 3 live inside object stream 5, reached through type 2
+     cross reference entries. Nothing dereferences them until pages() runs, so
+     this fixture is what catches a "were object streams used" answer that is
+     really a "how many did I decode so far" counter. */
+  OBJSTM: 'JVBERi0xLjUKJeLjz9MKNCAwIG9iago8PCAvTGVuZ3RoIDMyID4+CnN0cmVhbQowIDAgMSBSRyA0IHcgMjAgMjAgMTUwIDE1MCByZSBTCmVuZHN0cmVhbQplbmRvYmoKNSAwIG9iago8PCAvVHlwZSAvT2JqU3RtIC9OIDMgL0ZpcnN0IDE1IC9GaWx0ZXIgL0ZsYXRlRGVjb2RlIC9MZW5ndGggMTE4ID4+CnN0cmVhbQp42jNUMFAwUjA2UTBWMDQw4LKxUdAPqSxIVdB3TixJzMlPV9APSExPLQaqMVAIUrCzQ1IBkdB3zi/NK1EwVND3zkwpVog2BimMVdD3TU3JTHTKr1CINgBZYQrGsZgmgMiiVKAJEBuAxuWVALnFCiYwGwF9tirsCmVuZHN0cmVhbQplbmRvYmoKNiAwIG9iago8PCAvVHlwZSAvWFJlZiAvU2l6ZSA3IC9XIFsxIDQgMl0gL1Jvb3QgMSAwIFIgL0ZpbHRlciAvRmxhdGVEZWNvZGUgL0xlbmd0aCAzOCA+PgpzdHJlYW0KeNpjYACC//+ZgCQrAwOEYoRQTIxAip+BAUQlgClGawYGAF9kAsUKZW5kc3RyZWFtCmVuZG9iagpzdGFydHhyZWYKMzE1CiUlRU9GCg==',
+};
+
+/* Every loop over user bytes is bounded. A hostile file must not hang the tab. */
+const LIM = {
+  FILES: 64,
+  FILE_BYTES: 512 * 1024 * 1024,
+  HELD_BYTES: 1024 * 1024 * 1024,   /* every held file pins its whole buffer, so the sum is budgeted too */
+  OUT_BYTES: 512 * 1024 * 1024,
+  INFLATED_BYTES: 64 * 1024 * 1024, /* only structural streams are inflated, so this is generous */
+  STREAM_SCAN: 16 * 1024 * 1024,
+  XREF_HOPS: 256,
+  XREF_SUBSECTIONS: 100000,
+  XREF_ENTRIES: 5000000,
+  DICT_KEYS: 200000,
+  ARRAY_ITEMS: 2000000,
+  NEST: 200,
+  TOKEN: 2048,
+  OBJECTS: 400000,
+  OBJSTM_N: 200000,
+  PAGES: 50000,
+  PAGE_DEPTH: 64,
+  SEL_PAGES: 5000,
+  PLAN_RENDER: 300,
+  COMMENTS: 100000
+};
+
+const RCLASS = {
+  NOT_PDF: 'not a PDF',
+  ENCRYPTED: 'encrypted (/Encrypt present in the trailer), refused',
+  BAD_XREF: 'damaged or absent cross reference data, refused',
+  BAD_PAGES: 'damaged page tree, refused',
+  INFLATE: 'stream could not be inflated, refused',
+  UNHANDLED: 'unhandled parse error'
+};
+
+class Refusal extends Error {
+  constructor(cls, detail) {
+    super(cls + (detail ? ' (' + detail + ')' : ''));
+    this.name = 'Refusal';
+    this.cls = cls;
+    this.detail = detail || '';
+  }
+}
+
+/* ---------- byte helpers ---------- */
+const WS = new Set([0x00, 0x09, 0x0a, 0x0c, 0x0d, 0x20]);
+const DELIM = new Set([0x28, 0x29, 0x3c, 0x3e, 0x5b, 0x5d, 0x7b, 0x7d, 0x2f, 0x25]);
+const isWS = c => WS.has(c);
+const isReg = c => c !== undefined && !WS.has(c) && !DELIM.has(c);
+
+function bytesToStr(b, from, len) {
+  let s = '';
+  const end = Math.min(b.length, from + len);
+  for (let i = Math.max(0, from); i < end; i++) s += String.fromCharCode(b[i]);
+  return s;
+}
+function strToBytes(s) {
+  const a = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) a[i] = s.charCodeAt(i) & 0xff;
+  return a;
+}
+function b64ToBytes(s) {
+  const bin = atob(s);
+  const a = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i) & 0xff;
+  return a;
+}
+function indexOfSeq(buf, str, from) {
+  const pat = strToBytes(str);
+  const last = buf.length - pat.length;
+  outer: for (let i = Math.max(0, from | 0); i <= last; i++) {
+    for (let j = 0; j < pat.length; j++) if (buf[i + j] !== pat[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+/* The /Length fallback needs the next "endstream" after a byte offset. Scanning
+   the whole buffer for every stream object is O(objects x filesize) on the main
+   thread, which a file carrying tens of thousands of oversized /Length values
+   turns into a hard hang. Index the keyword once per buffer, then binary search.
+   A buffer too dense to index is one where the next hit is close anyway, so
+   that case falls back to a bounded scan. */
+const ES_INDEX = new WeakMap();
+const ES_MAX = 1048576;
+function endstreamIndex(buf) {
+  if (ES_INDEX.has(buf)) return ES_INDEX.get(buf);
+  const list = [];
+  let p = 0;
+  while (list.length < ES_MAX) {
+    const i = indexOfSeq(buf, 'endstream', p);
+    if (i < 0) break;
+    list.push(i);
+    p = i + 9;
+  }
+  const v = list.length < ES_MAX ? list : null;
+  ES_INDEX.set(buf, v);
+  return v;
+}
+function findEndstream(buf, from) {
+  const list = endstreamIndex(buf);
+  if (list === null) {
+    const stop = Math.min(buf.length, (from | 0) + LIM.STREAM_SCAN);
+    return indexOfSeq(buf.subarray(0, stop), 'endstream', from);
+  }
+  let lo = 0, hi = list.length - 1, ans = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (list[mid] >= from) { ans = list[mid]; hi = mid - 1; } else lo = mid + 1;
+  }
+  return ans;
+}
+function lastIndexOfSeq(buf, str) {
+  const pat = strToBytes(str);
+  outer: for (let i = buf.length - pat.length; i >= 0; i--) {
+    for (let j = 0; j < pat.length; j++) if (buf[i + j] !== pat[j]) continue outer;
+    return i;
+  }
+  return -1;
+}
+function bytesContain(buf, str) { return indexOfSeq(buf, str, 0) >= 0; }
+
+/* ---------- PDF value types ----------
+   Dictionaries are Map instances, never plain objects. A Map key cannot reach
+   Object.prototype, so a hostile file carrying a /__proto__ or /constructor key
+   cannot pollute a prototype through this parser. The self test proves it. */
+class Name { constructor(n) { this.n = n; } }
+class Ref { constructor(num, gen) { this.num = num; this.gen = gen; } }
+class OutRef { constructor(n) { this.n = n; } }
+class PStream { constructor(dict, raw) { this.dict = dict; this.raw = raw; } }
+class PStr { constructor(bytes) { this.bytes = bytes; } }
+
+/* ---------- lexer ---------- */
+class Lexer {
+  constructor(b, p) { this.b = b; this.p = p | 0; this.res = null; }
+
+  skip() {
+    let guard = 0;
+    for (;;) {
+      if (++guard > LIM.COMMENTS) throw new Error('runaway comment scan');
+      while (this.p < this.b.length && isWS(this.b[this.p])) this.p++;
+      if (this.b[this.p] === 0x25) {
+        while (this.p < this.b.length && this.b[this.p] !== 0x0a && this.b[this.p] !== 0x0d) this.p++;
+      } else return;
+    }
+  }
+
+  tokenWord() {
+    this.skip();
+    const s = this.p;
+    while (this.p < this.b.length && isReg(this.b[this.p]) && this.p - s < LIM.TOKEN) this.p++;
+    return bytesToStr(this.b, s, this.p - s);
+  }
+
+  parse(depth) {
+    depth = depth | 0;
+    if (depth > LIM.NEST) throw new Error('object nesting deeper than ' + LIM.NEST);
+    this.skip();
+    const c = this.b[this.p];
+    if (c === undefined) throw new Error('end of file while parsing an object');
+
+    if (c === 0x2f) return this.parseName();
+    if (c === 0x3c) {
+      if (this.b[this.p + 1] === 0x3c) return this.parseDict(depth);
+      return this.parseHexStr();
+    }
+    if (c === 0x28) return this.parseLitStr();
+    if (c === 0x5b) {
+      this.p++;
+      const a = [];
+      for (;;) {
+        this.skip();
+        if (this.p >= this.b.length) throw new Error('end of file inside an array');
+        if (this.b[this.p] === 0x5d) { this.p++; return a; }
+        if (a.length >= LIM.ARRAY_ITEMS) throw new Error('array longer than ' + LIM.ARRAY_ITEMS);
+        a.push(this.parse(depth + 1));
+      }
+    }
+    if (c === 0x5d || c === 0x3e || c === 0x29 || c === 0x7b || c === 0x7d) {
+      throw new Error('unexpected delimiter byte 0x' + c.toString(16) + ' at ' + this.p);
+    }
+
+    const at = this.p;
+    const w = this.tokenWord();
+    if (w === 'true') return true;
+    if (w === 'false') return false;
+    if (w === 'null') return null;
+    if (w === '') throw new Error('unreadable token at ' + at);
+
+    const m = /^[+-]?(?:\d+(?:\.\d*)?|\.\d+)/.exec(w);
+    if (m) {
+      const num = parseFloat(m[0]);
+      if (/^\d+$/.test(w)) {
+        const save = this.p;
+        let isRef = false, gen = 0;
+        try {
+          const w2 = this.tokenWord();
+          if (/^\d+$/.test(w2)) {
+            const w3 = this.tokenWord();
+            if (w3 === 'R') { isRef = true; gen = parseInt(w2, 10); }
+          }
+        } catch (e) { /* fall through to the plain number */ }
+        if (isRef) return new Ref(parseInt(w, 10), gen);
+        this.p = save;
+      }
+      return num;
+    }
+    return { kw: w };
+  }
+
+  parseName() {
+    this.p++;
+    let s = '';
+    while (this.p < this.b.length && isReg(this.b[this.p]) && s.length < LIM.TOKEN) {
+      const ch = this.b[this.p];
+      if (ch === 0x23 && this.p + 2 < this.b.length) {
+        const h = bytesToStr(this.b, this.p + 1, 2);
+        if (/^[0-9a-fA-F]{2}$/.test(h)) { s += String.fromCharCode(parseInt(h, 16)); this.p += 3; continue; }
+      }
+      s += String.fromCharCode(ch);
+      this.p++;
+    }
+    return new Name(s);
+  }
+
+  parseDict(depth) {
+    this.p += 2;
+    const d = new Map();
+    for (;;) {
+      this.skip();
+      if (this.p >= this.b.length) throw new Error('end of file inside a dictionary');
+      if (this.b[this.p] === 0x3e && this.b[this.p + 1] === 0x3e) { this.p += 2; break; }
+      if (d.size >= LIM.DICT_KEYS) throw new Error('dictionary larger than ' + LIM.DICT_KEYS + ' keys');
+      const k = this.parse(depth + 1);
+      if (!(k instanceof Name)) throw new Error('dictionary key is not a name');
+      const v = this.parse(depth + 1);
+      d.set(k.n, v);
+    }
+
+    const save = this.p;
+    this.skip();
+    if (bytesToStr(this.b, this.p, 6) === 'stream') {
+      this.p += 6;
+      if (this.b[this.p] === 0x0d) this.p++;
+      if (this.b[this.p] === 0x0a) this.p++;
+      const start = this.p;
+
+      /* Mandatory: honour /Length exactly, resolving it when it is indirect.
+         DecompressionStream is strict where zlib is lenient, so a single extra
+         trailing EOL byte taken from an endstream scan makes inflate throw. */
+      let len = d.get('Length');
+      if (len instanceof Ref && this.res) { try { len = this.res(len); } catch (e) { len = undefined; } }
+      let end = -1;
+      if (typeof len === 'number' && Number.isFinite(len) && len >= 0 && start + len <= this.b.length) {
+        const probe = bytesToStr(this.b, start + len, 24);
+        if (/^[\s\x00]*endstream/.test(probe)) end = start + len;
+      }
+      if (end < 0) {
+        const idx = findEndstream(this.b, start);
+        if (idx < 0) throw new Error('stream with no endstream keyword');
+        end = idx;
+        while (end > start && (this.b[end - 1] === 0x0a || this.b[end - 1] === 0x0d)) end--;
+      }
+      const ei = findEndstream(this.b, end);
+      this.p = ei < 0 ? end : ei + 9;
+      return new PStream(d, this.b.subarray(start, end));
+    }
+    this.p = save;
+    return d;
+  }
+
+  parseHexStr() {
+    this.p++;
+    let hx = '';
+    while (this.p < this.b.length && this.b[this.p] !== 0x3e) {
+      const ch = String.fromCharCode(this.b[this.p]);
+      if (/[0-9a-fA-F]/.test(ch)) {
+        if (hx.length >= LIM.ARRAY_ITEMS) throw new Error('hex string too long');
+        hx += ch;
+      }
+      this.p++;
+    }
+    this.p++;
+    if (hx.length % 2) hx += '0';
+    const out = new Uint8Array(hx.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(hx.substr(i * 2, 2), 16);
+    return new PStr(out);
+  }
+
+  parseLitStr() {
+    this.p++;
+    let depth = 1;
+    const out = [];
+    const ESC = { 0x6e: 10, 0x72: 13, 0x74: 9, 0x62: 8, 0x66: 12, 0x28: 40, 0x29: 41, 0x5c: 92 };
+    while (this.p < this.b.length) {
+      if (out.length >= LIM.ARRAY_ITEMS) throw new Error('literal string too long');
+      const c = this.b[this.p++];
+      if (c === 0x5c) {
+        const e = this.b[this.p++];
+        if (e === undefined) break;
+        if (Object.prototype.hasOwnProperty.call(ESC, e)) out.push(ESC[e]);
+        else if (e >= 0x30 && e <= 0x37) {
+          let o = String.fromCharCode(e);
+          for (let k = 0; k < 2; k++) {
+            const n = this.b[this.p];
+            if (n >= 0x30 && n <= 0x37) { o += String.fromCharCode(n); this.p++; } else break;
+          }
+          out.push(parseInt(o, 8) & 0xff);
+        } else if (e === 0x0a) { /* line continuation */ }
+        else if (e === 0x0d) { if (this.b[this.p] === 0x0a) this.p++; }
+        else out.push(e);
+        continue;
+      }
+      if (c === 0x28) { depth++; out.push(c); continue; }
+      if (c === 0x29) { depth--; if (depth === 0) break; out.push(c); continue; }
+      out.push(c);
+    }
+    return new PStr(new Uint8Array(out));
+  }
+}
+
+/* ---------- inflate ----------
+   Read the decompressed output with a manual reader loop. A Response wrapper
+   around the stream throws a network style TypeError on an opaque origin, which
+   is the origin a file opened straight off a local disk can present. */
+async function inflateOnce(bytes, fmt) {
+  const ds = new DecompressionStream(fmt);
+  const w = ds.writable.getWriter();
+  /* The write side must never be left as a dangling promise. When the stream
+     rejects, both sides reject, and an unawaited writer rejection surfaces as
+     an unhandled rejection rather than as the refusal the user should see. */
+  let werr = null;
+  const wp = w.write(bytes).then(() => w.close()).catch(e => { werr = e; });
+  const chunks = [];
+  let total = 0;
+  const r = ds.readable.getReader();
+  try {
+    for (;;) {
+      const step = await r.read();
+      if (step.done) break;
+      /* tested BEFORE the chunk is retained, so the offending chunk is never
+         held and the peak stays inside the budget */
+      if (total + step.value.length > LIM.INFLATED_BYTES) {
+        throw new Error('decompressed stream larger than ' + LIM.INFLATED_BYTES + ' bytes');
+      }
+      chunks.push(step.value);
+      total += step.value.length;
+    }
+  } catch (e) {
+    /* stopping the read side on our own terms, as the size budget does, leaves
+       the writer blocked on backpressure, so cancel before awaiting it or the
+       whole parse hangs instead of refusing */
+    try { await r.cancel(); } catch (ce) { /* the stream is already errored */ }
+    await wp;
+    throw e;
+  }
+  await wp;
+  if (werr && total === 0) throw werr;
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return out;
+}
+
+async function inflate(bytes) {
+  try {
+    return await inflateOnce(bytes, 'deflate');
+  } catch (e1) {
+    try {
+      /* some producers emit raw deflate with no zlib header */
+      return await inflateOnce(bytes, 'deflate-raw');
+    } catch (e2) {
+      const m1 = String(e1 && e1.message ? e1.message : e1).slice(0, 90);
+      throw new Refusal(RCLASS.INFLATE,
+        'DecompressionStream rejected these bytes as deflate and as deflate-raw: ' + (m1 || 'no message') +
+        '. A truncated or unterminated compressed stream is refused rather than decoded partly');
+    }
+  }
+}
+
+/* PNG predictors 10 to 15. Row filter type is per row, so all five are implemented. */
+function undoPredictor(data, predictor, colors, bpc, columns) {
+  if (!predictor || predictor < 2) return data;
+  if (predictor === 2) throw new Refusal(RCLASS.INFLATE, 'TIFF predictor 2 is not supported');
+  const bpp = Math.max(1, Math.ceil(colors * bpc / 8));
+  const rowLen = Math.ceil(colors * bpc * columns / 8);
+  if (rowLen <= 0) throw new Refusal(RCLASS.INFLATE, 'predictor row length is zero');
+  const nrows = Math.floor(data.length / (rowLen + 1));
+  const out = new Uint8Array(nrows * rowLen);
+  let prev = new Uint8Array(rowLen);
+  for (let r = 0; r < nrows; r++) {
+    const base = r * (rowLen + 1);
+    const ft = data[base];
+    const cur = new Uint8Array(rowLen);
+    for (let i = 0; i < rowLen; i++) {
+      const a = i >= bpp ? cur[i - bpp] : 0;
+      const b = prev[i];
+      const c = i >= bpp ? prev[i - bpp] : 0;
+      const x = data[base + 1 + i];
+      let v;
+      if (ft === 0) v = x;
+      else if (ft === 1) v = x + a;
+      else if (ft === 2) v = x + b;
+      else if (ft === 3) v = x + ((a + b) >> 1);
+      else if (ft === 4) {
+        const p = a + b - c, pa = Math.abs(p - a), pb = Math.abs(p - b), pc = Math.abs(p - c);
+        v = x + (pa <= pb && pa <= pc ? a : (pb <= pc ? b : c));
+      } else throw new Refusal(RCLASS.INFLATE, 'unknown PNG row filter type ' + ft);
+      cur[i] = v & 0xff;
+    }
+    out.set(cur, r * rowLen);
+    prev = cur;
+  }
+  return out;
+}
+
+function normaliseRotate(r) {
+  if (typeof r !== 'number' || !Number.isFinite(r)) return 0;
+  return ((Math.round(r / 90) * 90) % 360 + 360) % 360;
+}
+
+/* ---------- document ---------- */
+class Doc {
+  constructor(bytes, opts) {
+    this.b = bytes;
+    this.map = new Map();      /* object number -> {type, off, gen} or {type:2, stm, idx} */
+    this.freed = new Set();    /* recorded, but never allowed to shadow an older revision */
+    this.cache = new Map();
+    this.objstm = new Map();
+    this.trailer = new Map();
+    this.reversePrecedence = !!(opts && opts.reversePrecedence);
+    /* objStm counts the object streams actually decoded, which is lazy and is
+       therefore useless as an answer to "does this file use object streams".
+       usesObjStm is derived from the cross reference map instead. */
+    this.stats = { kinds: new Set(), objStm: 0, usesObjStm: false, hops: 0, hybrid: 0 };
+    this._resolving = false;
+  }
+
+  lex(p) { const l = new Lexer(this.b, p); l.res = r => this.syncNum(r); return l; }
+
+  /* Resolve an indirect /Length without recursing. Streams cannot be /Length
+     targets, so one level is always enough. */
+  syncNum(ref) {
+    if (this._resolving) return undefined;
+    const e = this.map.get(ref.num);
+    if (!e || e.type !== 1) return undefined;
+    if (!(e.off >= 0 && e.off < this.b.length)) return undefined;
+    this._resolving = true;
+    try {
+      const lx = new Lexer(this.b, e.off);
+      const a = lx.parse();
+      lx.parse();
+      if (lx.tokenWord() !== 'obj' || a !== ref.num) return undefined;
+      const v = lx.parse();
+      return typeof v === 'number' ? v : undefined;
+    } catch (err) {
+      return undefined;
+    } finally {
+      this._resolving = false;
+    }
+  }
+
+  isTableAt(off) {
+    const lx = new Lexer(this.b, off);
+    try { lx.skip(); } catch (e) { return false; }
+    return bytesToStr(this.b, lx.p, 4) === 'xref';
+  }
+
+  /* First wins. An object number already in the map is never overwritten.
+     The entry cap is a whole document budget, not a per revision one: 256
+     chained revisions each carrying a disjoint 5,000,000 entry /Index would
+     otherwise grow the map without bound. */
+  mergeEntries(entries) {
+    for (const pair of entries) {
+      const num = pair[0];
+      if (this.map.has(num)) continue;
+      if (this.map.size >= LIM.XREF_ENTRIES) {
+        throw new Refusal(RCLASS.BAD_XREF, 'cross reference data larger than ' + LIM.XREF_ENTRIES + ' entries in total');
+      }
+      this.map.set(num, pair[1]);
+    }
+  }
+  mergeTrailer(d) {
+    for (const pair of d) if (!this.trailer.has(pair[0])) this.trailer.set(pair[0], pair[1]);
+  }
+
+  /* Read a classic cross reference table (ISO 32000-1 section 7.5.4).
+     Pure read: it returns entries and the trailer and merges nothing. */
+  scanClassicTable(off) {
+    const lx = this.lex(off);
+    lx.skip();
+    if (bytesToStr(this.b, lx.p, 4) !== 'xref') {
+      throw new Refusal(RCLASS.BAD_XREF, 'xref offset ' + off + ' points at neither xref nor an xref stream');
+    }
+    this.stats.kinds.add('table');
+    lx.p += 4;
+    const entries = [];
+    const freed = [];
+    let sections = 0;
+    for (;;) {
+      if (++sections > LIM.XREF_SUBSECTIONS) throw new Refusal(RCLASS.BAD_XREF, 'too many xref subsections');
+      lx.skip();
+      if (lx.p >= this.b.length) throw new Refusal(RCLASS.BAD_XREF, 'cross reference table ends without a trailer');
+      if (bytesToStr(this.b, lx.p, 7) === 'trailer') {
+        lx.p += 7;
+        let d;
+        try { d = lx.parse(); } catch (e) { throw new Refusal(RCLASS.BAD_XREF, 'trailer dictionary unreadable'); }
+        if (!(d instanceof Map)) throw new Refusal(RCLASS.BAD_XREF, 'trailer is not a dictionary');
+        return { entries: entries, freed: freed, trailer: d };
+      }
+      let start, count;
+      try { start = lx.parse(); count = lx.parse(); } catch (e) {
+        throw new Refusal(RCLASS.BAD_XREF, 'malformed xref subsection header');
+      }
+      if (!Number.isInteger(start) || !Number.isInteger(count) || start < 0 || count < 0) {
+        throw new Refusal(RCLASS.BAD_XREF, 'malformed xref subsection header');
+      }
+      if (count > LIM.XREF_ENTRIES || entries.length + count > LIM.XREF_ENTRIES) {
+        throw new Refusal(RCLASS.BAD_XREF, 'cross reference table larger than ' + LIM.XREF_ENTRIES + ' entries');
+      }
+      lx.skip();
+      for (let i = 0; i < count; i++) {
+        if (lx.p + 18 > this.b.length) throw new Refusal(RCLASS.BAD_XREF, 'cross reference table truncated');
+        const o = parseInt(bytesToStr(this.b, lx.p, 10), 10);
+        const g = parseInt(bytesToStr(this.b, lx.p + 11, 5), 10);
+        const t = String.fromCharCode(this.b[lx.p + 17]);
+        if (!Number.isFinite(o) || !Number.isFinite(g) || (t !== 'n' && t !== 'f')) {
+          throw new Refusal(RCLASS.BAD_XREF, 'malformed cross reference entry for object ' + (start + i));
+        }
+        lx.p += 20;
+        /* real producers emit 19 byte entries with a single end of line byte */
+        const back = this.b[lx.p - 1];
+        if (back !== 0x0a && back !== 0x0d && back !== 0x20) { lx.p -= 1; lx.skip(); }
+        const num = start + i;
+        if (t === 'n') entries.push([num, { type: 1, off: o, gen: g }]);
+        else freed.push(num);
+      }
+    }
+  }
+
+  /* Read a cross reference stream (ISO 32000-1 section 7.5.8).
+     Pure read: it returns entries and the stream dictionary and merges nothing. */
+  async scanXrefStream(off) {
+    const lx = this.lex(off);
+    let a, kw, st;
+    try {
+      a = lx.parse();
+      lx.parse();
+      kw = lx.tokenWord();
+    } catch (e) {
+      throw new Refusal(RCLASS.BAD_XREF, 'xref offset ' + off + ' points at neither xref nor an xref stream');
+    }
+    if (kw !== 'obj' || !Number.isInteger(a)) {
+      throw new Refusal(RCLASS.BAD_XREF, 'xref offset ' + off + ' points at neither xref nor an xref stream');
+    }
+    try { st = lx.parse(); } catch (e) {
+      if (e instanceof Refusal) throw e;
+      throw new Refusal(RCLASS.BAD_XREF, 'xref stream object at ' + off + ' is unreadable');
+    }
+    if (!(st instanceof PStream)) throw new Refusal(RCLASS.BAD_XREF, 'object at xref offset ' + off + ' is not a stream');
+    const ty = st.dict.get('Type');
+    if (!(ty instanceof Name) || ty.n !== 'XRef') {
+      throw new Refusal(RCLASS.BAD_XREF, 'stream at xref offset ' + off + ' is not /Type /XRef');
+    }
+    this.stats.kinds.add('stream');
+
+    const data = await this.decodeStream(st);
+    const W = st.dict.get('W');
+    if (!Array.isArray(W) || W.length < 3 || W.some(x => !Number.isInteger(x) || x < 0 || x > 8)) {
+      throw new Refusal(RCLASS.BAD_XREF, 'xref stream has a malformed /W array');
+    }
+    const size = st.dict.get('Size');
+    let index = st.dict.get('Index');
+    if (!Array.isArray(index) || index.length % 2 !== 0) {
+      if (!Number.isInteger(size) || size < 0) throw new Refusal(RCLASS.BAD_XREF, 'xref stream has no usable /Size');
+      index = [0, size];
+    }
+    const rowLen = W.reduce((s, x) => s + x, 0);
+    if (rowLen <= 0) throw new Refusal(RCLASS.BAD_XREF, 'xref stream /W widths sum to zero');
+
+    const entries = [];
+    const freed = [];
+    let p = 0;
+    for (let k = 0; k + 1 < index.length; k += 2) {
+      const start = index[k], count = index[k + 1];
+      if (!Number.isInteger(start) || !Number.isInteger(count) || start < 0 || count < 0) {
+        throw new Refusal(RCLASS.BAD_XREF, 'xref stream has a malformed /Index array');
+      }
+      if (entries.length + count > LIM.XREF_ENTRIES) {
+        throw new Refusal(RCLASS.BAD_XREF, 'cross reference stream larger than ' + LIM.XREF_ENTRIES + ' entries');
+      }
+      for (let i = 0; i < count; i++) {
+        if (p + rowLen > data.length) break;
+        const f = [];
+        for (let wi = 0; wi < W.length; wi++) {
+          let v = 0;
+          for (let j = 0; j < W[wi]; j++) v = v * 256 + data[p++];
+          /* a /W width of 0 means the default: type 1, third field 0 */
+          f.push(W[wi] === 0 ? (wi === 0 ? 1 : 0) : v);
+        }
+        const num = start + i;
+        if (f[0] === 1) entries.push([num, { type: 1, off: f[1], gen: f[2] }]);
+        else if (f[0] === 2) entries.push([num, { type: 2, stm: f[1], idx: f[2] }]);
+        else freed.push(num);
+      }
+    }
+    return { entries: entries, freed: freed, trailer: st.dict };
+  }
+
+  async load() {
+    if (!bytesContain(this.b.subarray(0, 1024), '%PDF-')) {
+      throw new Refusal(RCLASS.NOT_PDF, 'the first 1024 bytes do not contain %PDF-');
+    }
+    const sx = lastIndexOfSeq(this.b, 'startxref');
+    if (sx < 0) throw new Refusal(RCLASS.BAD_XREF, 'no startxref found');
+    let off;
+    try { off = new Lexer(this.b, sx + 9).parse(); } catch (e) {
+      throw new Refusal(RCLASS.BAD_XREF, 'the value after startxref is unreadable');
+    }
+    if (!Number.isInteger(off)) throw new Refusal(RCLASS.BAD_XREF, 'the value after startxref is not an integer');
+
+    const seen = new Set();
+    let cur = off;
+    let hops = 0;
+    let first = true;
+
+    while (cur !== undefined && cur !== null) {
+      if (seen.has(cur)) break;                        /* a malformed /Prev loop must not hang the tab */
+      if (++hops > LIM.XREF_HOPS) throw new Refusal(RCLASS.BAD_XREF, 'cross reference chain longer than ' + LIM.XREF_HOPS + ' revisions');
+      seen.add(cur);
+      if (!(Number.isInteger(cur) && cur >= 0 && cur < this.b.length)) {
+        throw new Refusal(RCLASS.BAD_XREF, 'xref offset out of range (' + cur + ')');
+      }
+      if (!first) this.stats.hops++;
+
+      let revTrailer;
+
+      if (this.isTableAt(cur)) {
+        const table = this.scanClassicTable(cur);
+        let stream = null;
+        const stmOff = table.trailer.get('XRefStm');
+        if (stmOff !== undefined && stmOff !== null) {
+          /* An unreadable /XRefStm is a REFUSAL, never a fallback. The classic
+             table of a hybrid revision is by construction the superseded view,
+             so quietly carrying on with it emits a byte valid PDF holding an
+             older revision of the page content: the same corruption the merge
+             order below exists to prevent, reached by a second route. */
+          if (!(Number.isInteger(stmOff) && stmOff >= 0 && stmOff < this.b.length)) {
+            throw new Refusal(RCLASS.BAD_XREF, 'the /XRefStm value of a hybrid revision is not an offset inside the file (' + stmOff + ')');
+          }
+          try {
+            stream = await this.scanXrefStream(stmOff);
+          } catch (e) {
+            if (e instanceof Refusal) throw e;
+            throw new Refusal(RCLASS.BAD_XREF, 'the /XRefStm at offset ' + stmOff +
+              ' could not be read, and the classic table of a hybrid revision is a superseded view');
+          }
+          this.stats.hybrid++;    /* only a stream that was actually read counts as hybrid */
+        }
+
+        /* ISO 32000-1 section 7.5.8.4, HYBRID REFERENCE FILE.
+           The two merges below are deliberately separate and deliberately
+           ordered. In a hybrid revision the cross reference STREAM is the
+           authoritative view and the classic table is a deliberately stale
+           legacy view: it marks contested objects free or points them at
+           superseded copies. Merging is first wins, so the stream must be
+           merged FIRST. Reverse these two statements and the tool emits a
+           byte valid PDF carrying a superseded revision of the page content
+           with no error raised anywhere. Do not fold them into one call. */
+        if (this.reversePrecedence) {
+          /* selftest only: the deliberately wrong order, used as a control */
+          this.mergeEntries(table.entries);
+          if (stream) this.mergeEntries(stream.entries);
+        } else {
+          if (stream) this.mergeEntries(stream.entries);   /* step 1: /XRefStm */
+          this.mergeEntries(table.entries);                /* step 2: classic table */
+        }
+
+        for (const n of table.freed) this.freed.add(n);
+        if (stream) { for (const n of stream.freed) this.freed.add(n); this.mergeTrailer(stream.trailer); }
+        this.mergeTrailer(table.trailer);
+        revTrailer = table.trailer;
+      } else {
+        const stream = await this.scanXrefStream(cur);
+        this.mergeEntries(stream.entries);
+        for (const n of stream.freed) this.freed.add(n);
+        this.mergeTrailer(stream.trailer);
+        revTrailer = stream.trailer;
+      }
+
+      const prev = revTrailer.get('Prev');
+      cur = Number.isInteger(prev) ? prev : undefined;
+      first = false;
+    }
+
+    if (!this.trailer.has('Root')) throw new Refusal(RCLASS.BAD_XREF, 'no /Root in any trailer');
+
+    /* A type 2 entry IS an object stream reference, whether or not anything
+       ever dereferences it, so the map is the source of truth for the
+       structure line. */
+    for (const pair of this.map) {
+      if (pair[1].type === 2) { this.stats.usesObjStm = true; break; }
+    }
+    return this;
+  }
+
+  async decodeStream(st) {
+    let data = st.raw;
+    let filt = st.dict.get('Filter');
+    let parms = st.dict.get('DecodeParms');
+    if (parms === undefined) parms = st.dict.get('DP');
+    if (filt instanceof Ref) filt = await this.get(filt.num);
+    if (parms instanceof Ref) parms = await this.get(parms.num);
+    if (!filt) return data;
+    const filts = Array.isArray(filt) ? filt : [filt];
+    const parmsArr = Array.isArray(parms) ? parms : [parms];
+    if (filts.length > 16) throw new Refusal(RCLASS.INFLATE, 'more than 16 chained stream filters');
+    for (let i = 0; i < filts.length; i++) {
+      let f = filts[i];
+      if (f instanceof Ref) f = await this.get(f.num);
+      const nm = f instanceof Name ? f.n : String(f);
+      if (nm === 'FlateDecode' || nm === 'Fl') {
+        data = await inflate(data);
+        let pm = parmsArr[i];
+        if (pm instanceof Ref) pm = await this.get(pm.num);
+        if (pm instanceof Map) {
+          const pred = await this.num(pm.get('Predictor'), 1);
+          if (pred > 1) {
+            data = undoPredictor(data, pred,
+              await this.num(pm.get('Colors'), 1),
+              await this.num(pm.get('BitsPerComponent'), 8),
+              await this.num(pm.get('Columns'), 1));
+          }
+        }
+      } else {
+        throw new Refusal(RCLASS.INFLATE, 'stream filter /' + nm + ' is not supported for structural streams');
+      }
+    }
+    return data;
+  }
+
+  async num(v, dflt) {
+    if (v instanceof Ref) v = await this.get(v.num);
+    return typeof v === 'number' && Number.isFinite(v) ? v : dflt;
+  }
+
+  async get(num) {
+    if (this.cache.has(num)) return this.cache.get(num);
+    const e = this.map.get(num);
+    if (!e) { this.cache.set(num, null); return null; }
+    let val = null;
+    if (e.type === 1) {
+      if (!(Number.isInteger(e.off) && e.off >= 0 && e.off < this.b.length)) {
+        throw new Refusal(RCLASS.BAD_XREF, 'object ' + num + ' has an offset outside the file');
+      }
+      const lx = this.lex(e.off);
+      let a, kw;
+      try { a = lx.parse(); lx.parse(); kw = lx.tokenWord(); }
+      catch (err) { throw new Refusal(RCLASS.BAD_XREF, 'object ' + num + ' header unreadable at offset ' + e.off); }
+      if (kw !== 'obj' || a !== num) {
+        /* Refused, never repaired. This tool does not scan the file for "obj"
+           patterns to guess a cross reference table back into existence. */
+        throw new Refusal(RCLASS.BAD_XREF, 'object ' + num + ' is not at the offset the cross reference data claims');
+      }
+      val = lx.parse();
+      if (val && val.kw) val = null;
+    } else if (e.type === 2) {
+      const objs = await this.loadObjStm(e.stm);
+      val = objs.has(num) ? objs.get(num) : null;
+    }
+    this.cache.set(num, val);
+    return val;
+  }
+
+  /* Object streams, ISO 32000-1 section 7.5.7. Objects inside are always gen 0. */
+  async loadObjStm(num) {
+    if (this.objstm.has(num)) return this.objstm.get(num);
+    this.objstm.set(num, new Map());  /* placed first so a self referential ObjStm cannot recurse */
+    const st = await this.get(num);
+    if (!(st instanceof PStream)) throw new Refusal(RCLASS.BAD_XREF, 'object stream ' + num + ' is not a stream');
+    this.stats.objStm++;
+    const data = await this.decodeStream(st);
+    const N = await this.num(st.dict.get('N'), -1);
+    const First = await this.num(st.dict.get('First'), -1);
+    if (!Number.isInteger(N) || N < 0 || N > LIM.OBJSTM_N) throw new Refusal(RCLASS.BAD_XREF, 'object stream ' + num + ' has a bad /N');
+    if (!Number.isInteger(First) || First < 0) throw new Refusal(RCLASS.BAD_XREF, 'object stream ' + num + ' has a bad /First');
+    const hl = new Lexer(data, 0);
+    const pairs = [];
+    for (let i = 0; i < N; i++) {
+      let a, b;
+      try { a = hl.parse(); b = hl.parse(); } catch (e) { break; }
+      if (!Number.isInteger(a) || !Number.isInteger(b)) break;
+      pairs.push([a, b]);
+    }
+    const out = new Map();
+    for (const pr of pairs) {
+      try {
+        const ol = new Lexer(data, First + pr[1]);
+        out.set(pr[0], ol.parse());
+      } catch (e) { out.set(pr[0], null); }
+    }
+    this.objstm.set(num, out);
+    return out;
+  }
+
+  async deref(v) {
+    let hops = 0;
+    while (v instanceof Ref) {
+      if (++hops > 64) throw new Refusal(RCLASS.BAD_XREF, 'indirect reference chain longer than 64 hops');
+      v = await this.get(v.num);
+    }
+    return v;
+  }
+
+  /* Page tree, ISO 32000-1 section 7.7.3.2. Inheritable attributes are resolved
+     downward so every leaf carries a fully resolved copy. */
+  async pages() {
+    const rootRef = this.trailer.get('Root');
+    const root = await this.deref(rootRef);
+    if (root === null && rootRef instanceof Ref) {
+      throw new Refusal(RCLASS.BAD_XREF, 'the trailer /Root points at object ' + rootRef.num + ', which the cross reference data does not list');
+    }
+    if (!(root instanceof Map)) throw new Refusal(RCLASS.BAD_PAGES, 'the catalog is not a dictionary');
+    if (!root.has('Pages')) throw new Refusal(RCLASS.BAD_PAGES, 'the catalog has no /Pages');
+    const INH = ['Resources', 'MediaBox', 'CropBox', 'Rotate'];
+    const out = [];
+    const onPath = new Set();
+    const self = this;
+
+    async function walk(node, inherited, depth) {
+      if (depth > LIM.PAGE_DEPTH) throw new Refusal(RCLASS.BAD_PAGES, 'page tree deeper than ' + LIM.PAGE_DEPTH);
+      if (out.length > LIM.PAGES) throw new Refusal(RCLASS.BAD_PAGES, 'more than ' + LIM.PAGES + ' pages');
+      const key = node instanceof Ref ? node.num : null;
+      if (key !== null) {
+        if (onPath.has(key)) throw new Refusal(RCLASS.BAD_PAGES, 'page tree cycle at object ' + key);
+        onPath.add(key);
+      }
+      const d = await self.deref(node);
+      if (!(d instanceof Map)) throw new Refusal(RCLASS.BAD_PAGES, 'a page tree node is not a dictionary');
+      const nInh = new Map(inherited);          /* a Map, so a hostile key name cannot pollute a prototype */
+      for (const k of INH) if (d.has(k)) nInh.set(k, d.get(k));
+      const t = await self.deref(d.get('Type'));
+      const kids = await self.deref(d.get('Kids'));
+      const isBranch = (t instanceof Name && t.n === 'Pages') || (!(t instanceof Name) && Array.isArray(kids));
+      if (isBranch) {
+        if (!Array.isArray(kids)) throw new Refusal(RCLASS.BAD_PAGES, 'a /Pages node has no /Kids array');
+        if (kids.length > LIM.PAGES) throw new Refusal(RCLASS.BAD_PAGES, 'a /Kids array longer than ' + LIM.PAGES);
+        for (const k of kids) await walk(k, nInh, depth + 1);
+      } else {
+        out.push({ ref: node instanceof Ref ? node : null, dict: d, inh: nInh });
+      }
+      if (key !== null) onPath.delete(key);
+    }
+
+    await walk(root.get('Pages'), new Map(), 0);
+    if (out.length === 0) throw new Refusal(RCLASS.BAD_PAGES, 'the page walk yielded zero pages');
+    return out;
+  }
+
+  xrefKind() {
+    if (this.stats.hybrid > 0) return 'hybrid table plus /XRefStm';
+    const k = this.stats.kinds;
+    if (k.has('table') && k.has('stream')) return 'classic table and cross reference stream';
+    if (k.has('stream')) return 'cross reference stream';
+    if (k.has('table')) return 'classic table';
+    return 'none';
+  }
+}
+
+/* ---------- writer ---------- */
+const enc = strToBytes;
+
+function serName(n) {
+  let o = '/';
+  for (const ch of String(n)) {
+    const c = ch.charCodeAt(0);
+    if (c < 0x21 || c > 0x7e || '()<>[]{}/%#'.indexOf(ch) >= 0) o += '#' + c.toString(16).padStart(2, '0');
+    else o += ch;
+  }
+  return o;
+}
+
+function fmtNum(v) {
+  if (!Number.isFinite(v)) return '0';
+  if (Number.isInteger(v)) {
+    /* ISO 32000-1 section 7.3.3 has no exponential form, and String() switches
+       to one at 1e21, so an integer that large would be written as an invalid
+       token. toFixed(0) is no escape: it switches to exponential at the same
+       threshold. BigInt prints the exact integer as a plain digit run. */
+    const si = String(v);
+    if (si.indexOf('e') < 0 && si.indexOf('E') < 0) return si;
+    try { return BigInt(v).toString(); } catch (err) { return '0'; }
+  }
+  let s = String(Math.round(v * 1e6) / 1e6);
+  if (s.indexOf('e') >= 0 || s.indexOf('E') >= 0) {
+    s = v.toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+    if (s === '' || s === '-') s = '0';
+  }
+  return s;
+}
+
+function ser(v, ctx, chunks, depth) {
+  depth = depth | 0;
+  if (depth > LIM.NEST) throw new Error('serialisation nested deeper than ' + LIM.NEST);
+  if (v === null || v === undefined) { chunks.push(enc('null')); return; }
+  if (typeof v === 'boolean') { chunks.push(enc(v ? 'true' : 'false')); return; }
+  if (typeof v === 'number') { chunks.push(enc(fmtNum(v))); return; }
+  if (v instanceof Name) { chunks.push(enc(serName(v.n))); return; }
+  if (v instanceof OutRef) { chunks.push(enc(v.n + ' 0 R')); return; }
+  if (v instanceof Ref) {
+    const n = ctx.map.get(ctx.dk + ':' + v.num);
+    chunks.push(enc(n === undefined ? 'null' : (n + ' 0 R')));
+    return;
+  }
+  if (v instanceof PStr) {
+    /* written as hex strings, which sidesteps every literal string escaping bug */
+    let h = '<';
+    for (let i = 0; i < v.bytes.length; i++) h += v.bytes[i].toString(16).padStart(2, '0');
+    chunks.push(enc(h + '>'));
+    return;
+  }
+  if (Array.isArray(v)) {
+    chunks.push(enc('['));
+    for (let i = 0; i < v.length; i++) { if (i) chunks.push(enc(' ')); ser(v[i], ctx, chunks, depth + 1); }
+    chunks.push(enc(']'));
+    return;
+  }
+  if (v instanceof PStream) {
+    serDict(v.dict, ctx, chunks, v.raw.length, depth);
+    chunks.push(enc('\nstream\n'));
+    chunks.push(v.raw);
+    chunks.push(enc('\nendstream'));
+    return;
+  }
+  if (v instanceof Map) { serDict(v, ctx, chunks, null, depth); return; }
+  chunks.push(enc('null'));
+}
+
+function serDict(d, ctx, chunks, forceLen, depth) {
+  chunks.push(enc('<<'));
+  for (const pair of d) {
+    if (pair[0] === 'Length' && forceLen !== null) continue;   /* recomputed, never copied */
+    chunks.push(enc(serName(pair[0])));
+    chunks.push(enc(' '));
+    ser(pair[1], ctx, chunks, (depth | 0) + 1);
+    chunks.push(enc('\n'));
+  }
+  if (forceLen !== null) chunks.push(enc('/Length ' + forceLen + '\n'));
+  chunks.push(enc('>>'));
+}
+
+function refsIn(v, out) {
+  const st = [v];
+  let n = 0;
+  while (st.length) {
+    if (++n > LIM.ARRAY_ITEMS) throw new Error('object fan out larger than ' + LIM.ARRAY_ITEMS);
+    const x = st.pop();
+    if (x instanceof Ref) out.push(x.num);
+    else if (Array.isArray(x)) { for (const e of x) st.push(e); }
+    else if (x instanceof PStream) { for (const pair of x.dict) { if (pair[0] === 'Length') continue; st.push(pair[1]); } }
+    else if (x instanceof Map) { for (const pair of x) st.push(pair[1]); }
+  }
+  return out;
+}
+
+function makeId() {
+  const a = new Uint8Array(16);
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) crypto.getRandomValues(a);
+  else for (let i = 0; i < 16; i++) a[i] = Math.floor(Math.random() * 256);
+  let h = '<';
+  for (let i = 0; i < 16; i++) h += a[i].toString(16).padStart(2, '0');
+  return h + '>';
+}
+
+/* entries: [{dk, doc, page, rotateDelta}] in output order.
+   The number map is keyed by (document index, source object number). Keying by
+   source object number alone cross wires two documents that both use object 12. */
+async function buildPdf(entries) {
+  if (!entries.length) throw new Error('no pages selected');
+  if (entries.length > LIM.SEL_PAGES) throw new Error('more than ' + LIM.SEL_PAGES + ' pages selected');
+
+  const map = new Map();      /* 'dk:srcnum' -> new object number */
+  const nulled = new Set();   /* 'dk:srcnum' -> serialise as null */
+  let next = 3;               /* 1 is the fresh catalog, 2 is the fresh pages node */
+
+  const pageNums = entries.map(() => next++);
+  const bodies = new Map();   /* new object number -> [value, dk] */
+  let droppedPageRefs = 0;
+
+  /* a page selected more than once gets its own output object each time, so
+     per page rotation cannot collide */
+  entries.forEach((e, i) => {
+    if (e.page.ref) {
+      const k = e.dk + ':' + e.page.ref.num;
+      if (!map.has(k)) map.set(k, pageNums[i]);
+    }
+  });
+
+  const byDoc = new Map();
+  entries.forEach((e, i) => {
+    if (!byDoc.has(e.dk)) byDoc.set(e.dk, []);
+    byDoc.get(e.dk).push(i);
+  });
+
+  for (const pair of byDoc) {
+    const dk = pair[0];
+    const idxs = pair[1];
+    const doc = entries[idxs[0]].doc;
+    const pending = [];
+
+    /* A damaged object is only discovered here, while the page closure is
+       copied, and an untagged Refusal would abort the whole merge with a line
+       naming no file. Tag it with the document it came from so the caller can
+       name that file, drop it, and still build the rest. */
+    const own = e => { if (e instanceof Refusal && e.dk === undefined) e.dk = dk; return e; };
+    const getFrom = async n => { try { return await doc.get(n); } catch (e) { throw own(e); } };
+    const derefFrom = async v => { try { return await doc.deref(v); } catch (e) { throw own(e); } };
+
+    const decide = async refnum => {
+      const key = dk + ':' + refnum;
+      if (map.has(key) || nulled.has(key)) return;
+      const t = await getFrom(refnum);
+      if (t instanceof Map) {
+        const ty = t.get('Type');
+        const tn = ty instanceof Name ? ty.n : null;
+        if (tn === 'Pages') { nulled.add(key); return; }
+        if (tn === 'Page') { nulled.add(key); droppedPageRefs++; return; }
+      }
+      if (next > LIM.OBJECTS) throw new Error('object graph larger than ' + LIM.OBJECTS + ' objects');
+      map.set(key, next++);
+      pending.push(refnum);
+    };
+
+    for (const i of idxs) {
+      const e = entries[i];
+      const src = e.page.dict;
+      if (!(src instanceof Map)) throw own(new Refusal(RCLASS.BAD_PAGES, 'a selected page is not a dictionary'));
+      const d = new Map(src);
+      d.delete('Parent');
+      for (const k of ['Resources', 'MediaBox', 'CropBox', 'Rotate']) {
+        if (!d.has(k) && e.page.inh.has(k)) d.set(k, e.page.inh.get(k));
+      }
+      d.set('Type', new Name('Page'));
+      const rot = await derefFrom(d.get('Rotate'));
+      const nr = normaliseRotate((typeof rot === 'number' ? rot : 0) + e.rotateDelta);
+      /* absent means zero, so an unrotated page keeps the shape the source had */
+      if (nr === 0) d.delete('Rotate'); else d.set('Rotate', nr);
+      d.set('Parent', new OutRef(2));
+      bodies.set(pageNums[i], [d, dk]);
+      const rs = refsIn(d, []);
+      for (const r of rs) await decide(r);
+    }
+
+    let guard = 0;
+    while (pending.length) {
+      if (++guard > LIM.OBJECTS) throw new Error('object graph larger than ' + LIM.OBJECTS + ' objects');
+      const n = pending.shift();
+      const v = await getFrom(n);
+      bodies.set(map.get(dk + ':' + n), [v, dk]);
+      const rs = refsIn(v, []);
+      for (const r of rs) await decide(r);
+    }
+  }
+
+  const catalog = new Map([['Type', new Name('Catalog')], ['Pages', new OutRef(2)]]);
+  const pagesNode = new Map([
+    ['Type', new Name('Pages')],
+    ['Count', entries.length],
+    ['Kids', pageNums.map(n => new OutRef(n))]
+  ]);
+  bodies.set(1, [catalog, -1]);
+  bodies.set(2, [pagesNode, -1]);
+
+  const chunks = [];
+  let pos = 0;
+  /* copied stream payloads are views into the source buffers, so an object
+     count cap alone does not bound the output. Budget the bytes as they are
+     appended rather than discovering the total at the final allocation. */
+  const add = b => {
+    if (pos + b.length > LIM.OUT_BYTES) throw new Error('output larger than ' + LIM.OUT_BYTES + ' bytes');
+    chunks.push(b);
+    pos += b.length;
+  };
+  add(enc('%PDF-1.7\n'));
+  add(new Uint8Array([0x25, 0xe2, 0xe3, 0xcf, 0xd3, 0x0a]));
+
+  let maxNum = 0;
+  for (const k of bodies.keys()) if (k > maxNum) maxNum = k;
+  const offsets = new Array(maxNum + 1).fill(-1);
+  for (let n = 1; n <= maxNum; n++) {
+    if (!bodies.has(n)) continue;
+    offsets[n] = pos;
+    add(enc(n + ' 0 obj\n'));
+    const body = bodies.get(n);
+    const oc = [];
+    ser(body[0], { map: map, dk: body[1] }, oc, 0);
+    for (const c of oc) add(c);
+    add(enc('\nendobj\n'));
+  }
+
+  const xrefPos = pos;
+  let xr = 'xref\n0 ' + (maxNum + 1) + '\n0000000000 65535 f \n';
+  for (let n = 1; n <= maxNum; n++) {
+    xr += offsets[n] >= 0
+      ? String(offsets[n]).padStart(10, '0') + ' 00000 n \n'
+      : '0000000000 65535 f \n';
+  }
+  add(enc(xr));
+
+  const id = makeId();
+  /* /Encrypt, /Prev and /XRefStm are never carried into the new trailer */
+  add(enc('trailer\n<< /Size ' + (maxNum + 1) + ' /Root 1 0 R /ID [' + id + ' ' + id + '] >>\n'));
+  add(enc('startxref\n' + xrefPos + '\n%%EOF\n'));
+
+  let total = 0;
+  for (const c of chunks) total += c.length;
+  const out = new Uint8Array(total);
+  let o = 0;
+  for (const c of chunks) { out.set(c, o); o += c.length; }
+  return { bytes: out, pageCount: entries.length, droppedPageRefs: droppedPageRefs, objectCount: maxNum };
+}
+
+/* ---------- structures this tool does not carry across ---------- */
+async function notCarried(doc) {
+  const found = [];
+  let root;
+  try { root = await doc.deref(doc.trailer.get('Root')); } catch (e) { return found; }
+  if (!(root instanceof Map)) return found;
+
+  const has = async key => {
+    try { const v = await doc.deref(root.get(key)); return v; } catch (e) { return undefined; }
+  };
+
+  const outlines = await has('Outlines');
+  if (outlines instanceof Map && (outlines.has('First') || outlines.has('Last'))) {
+    found.push('bookmarks not carried over');
+  }
+  const acro = await has('AcroForm');
+  if (acro instanceof Map) {
+    let fields;
+    try { fields = await doc.deref(acro.get('Fields')); } catch (e) { fields = undefined; }
+    if (Array.isArray(fields) ? fields.length > 0 : acro.size > 0) found.push('form fields not carried over');
+  }
+  const names = await has('Names');
+  if (names instanceof Map && names.size > 0) found.push('named destinations not carried over');
+  const labels = await has('PageLabels');
+  if (labels instanceof Map && labels.size > 0) found.push('page labels not carried over');
+  const struct = await has('StructTreeRoot');
+  if (struct instanceof Map) found.push('tagged structure not carried over');
+  const ocp = await has('OCProperties');
+  if (ocp instanceof Map && ocp.size > 0) found.push('optional content groups not carried over');
+  const meta = root.get('Metadata');
+  if (meta !== undefined || doc.trailer.has('Info')) found.push('document metadata not carried over');
+  return found;
+}
+
+/* ---------- page range parsing ---------- */
+function parseRange(spec, n) {
+  const s = String(spec == null ? '' : spec).trim();
+  if (s === '' || /^all$/i.test(s)) {
+    const all = [];
+    for (let i = 1; i <= n; i++) all.push(i);
+    return { ok: true, list: all };
+  }
+  const parts = s.split(',');
+  if (parts.length > 2000) return { ok: false, msg: 'more than 2000 range terms' };
+  const out = [];
+  const seen = new Set();
+  const push = v => { if (!seen.has(v)) { seen.add(v); out.push(v); } };
+  for (const raw of parts) {
+    const t = raw.trim();
+    if (t === '') continue;
+    let m;
+    if ((m = /^(\d{1,7})$/.exec(t))) {
+      const a = parseInt(m[1], 10);
+      if (a < 1 || a > n) return { ok: false, msg: 'page ' + a + ' is outside 1 to ' + n };
+      push(a);
+    } else if ((m = /^(\d{1,7})\s*-\s*(\d{1,7})$/.exec(t))) {
+      const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+      if (a < 1 || b > n) return { ok: false, msg: 'range ' + t + ' is outside 1 to ' + n };
+      if (a > b) return { ok: false, msg: 'range ' + t + ' runs backwards' };
+      for (let i = a; i <= b; i++) push(i);
+    } else if ((m = /^(\d{1,7})\s*-$/.exec(t))) {
+      const a = parseInt(m[1], 10);
+      if (a < 1 || a > n) return { ok: false, msg: 'page ' + a + ' is outside 1 to ' + n };
+      for (let i = a; i <= n; i++) push(i);
+    } else if ((m = /^-\s*(\d{1,7})$/.exec(t))) {
+      const b = parseInt(m[1], 10);
+      if (b < 1 || b > n) return { ok: false, msg: 'page ' + b + ' is outside 1 to ' + n };
+      for (let i = 1; i <= b; i++) push(i);
+    } else {
+      return { ok: false, msg: 'range term not understood: ' + t.slice(0, 40) };
+    }
+    if (out.length > LIM.SEL_PAGES) return { ok: false, msg: 'more than ' + LIM.SEL_PAGES + ' pages selected' };
+  }
+  if (!out.length) return { ok: false, msg: 'this range selects no pages' };
+  return { ok: true, list: out };
+}
+/*ENGINE-END*/
+
+/* ---------- UI ----------
+   Every node below is built with createElement and textContent. No user derived
+   string is ever parsed as markup anywhere in this file: none of the four DOM
+   sinks that would allow it is used. */
+const $ = id => document.getElementById(id);
+const elFiles = $('files'), elPlan = $('plan'), elResults = $('results');
+const elFileCount = $('fileCount'), elPlanCount = $('planCount');
+const elBuild = $('build'), elClear = $('clear'), elPicker = $('picker'), elDrop = $('drop');
+const elSt = $('selftest'), elStOut = $('stresults');
+
+const state = { files: [], plan: [], nextId: 1, busy: false };
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined && text !== null) n.textContent = String(text);
+  return n;
+}
+function tag(word, kind) {
+  const s = el('span', 'tag t-' + kind, word);
+  return s;
+}
+function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+function refusalLine(rf, suffix) {
+  const d = el('div', 'line err');
+  d.appendChild(tag('REFUSED', 'err'));
+  d.appendChild(document.createTextNode(' ' + rf.name + ': ' + rf.refusal.cls +
+    (rf.refusal.detail ? ' (' + rf.refusal.detail + ')' : '') + (suffix || '')));
+  return d;
+}
+function fmtBytes(n) {
+  const s = String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return s + ' bytes';
+}
+function safeName(s) {
+  return String(s).replace(/[^A-Za-z0-9._-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 80) || 'output';
+}
+
+async function analyse(name, bytes) {
+  const rec = {
+    id: state.nextId++, name: name, size: bytes.length,
+    doc: null, pages: [], refusal: null, warnings: [], range: 'all', rangeError: ''
+  };
+  try {
+    if (bytes.length === 0) throw new Refusal(RCLASS.NOT_PDF, 'the file is zero bytes');
+    if (bytes.length > LIM.FILE_BYTES) throw new Refusal(RCLASS.NOT_PDF, 'larger than the ' + LIM.FILE_BYTES + ' byte limit of this page');
+    const doc = new Doc(bytes);
+    await doc.load();
+    if (doc.trailer.has('Encrypt')) throw new Refusal(RCLASS.ENCRYPTED, '');
+    rec.pages = await doc.pages();
+    rec.warnings = await notCarried(doc);
+    rec.doc = doc;
+  } catch (e) {
+    if (e instanceof Refusal) rec.refusal = { cls: e.cls, detail: e.detail };
+    else rec.refusal = { cls: RCLASS.UNHANDLED, detail: String(e && e.message ? e.message : e).slice(0, 200) };
+  }
+  return rec;
+}
+
+function structureLine(rec) {
+  const bits = [fmtBytes(rec.size)];
+  if (rec.doc) {
+    bits.push(rec.pages.length + (rec.pages.length === 1 ? ' page' : ' pages'));
+    bits.push('cross reference: ' + rec.doc.xrefKind());
+    bits.push('object streams: ' + (rec.doc.stats.usesObjStm ? 'yes' : 'no'));
+    bits.push('incremental updates: ' + rec.doc.stats.hops);
+  }
+  return bits.join(' | ');
+}
+
+function planFor(fid) { return state.plan.filter(p => p.fid === fid); }
+
+function syncPlanForFile(rec) {
+  const r = parseRange(rec.range, rec.pages.length);
+  if (!r.ok) { rec.rangeError = r.msg; return; }
+  rec.rangeError = '';
+  const want = new Set(r.list.map(p => p - 1));
+  const kept = [];
+  for (const p of state.plan) {
+    if (p.fid !== rec.id) { kept.push(p); continue; }
+    if (want.has(p.pageIndex)) kept.push(p);
+  }
+  const have = new Set(kept.filter(p => p.fid === rec.id).map(p => p.pageIndex));
+  const additions = r.list.map(p => p - 1).filter(i => !have.has(i))
+    .map(i => ({ fid: rec.id, pageIndex: i, rotate: 0 }));
+  if (!additions.length) { state.plan = kept; return; }
+  /* new pages join after this file's last existing page, or, when the file has
+     none left, at the point the file stack implies */
+  let at = -1;
+  for (let i = kept.length - 1; i >= 0; i--) if (kept[i].fid === rec.id) { at = i + 1; break; }
+  if (at < 0) {
+    const order = new Map();
+    state.files.forEach((f, i) => order.set(f.id, i));
+    const mine = order.get(rec.id);
+    at = kept.length;
+    for (let i = 0; i < kept.length; i++) {
+      if (order.get(kept[i].fid) > mine) { at = i; break; }
+    }
+  }
+  state.plan = kept.slice(0, at).concat(additions, kept.slice(at));
+}
+
+function fileById(id) { return state.files.find(f => f.id === id) || null; }
+
+function renderFiles() {
+  clear(elFiles);
+  const usable = state.files.filter(f => f.doc).length;
+  elFileCount.textContent = state.files.length === 0
+    ? '(none added)'
+    : '(' + state.files.length + ' added, ' + usable + ' usable)';
+
+  state.files.forEach((rec, idx) => {
+    const li = el('li');
+
+    const head = el('div', 'row');
+    const nm = el('span', 'fname grow', rec.name);
+    head.appendChild(nm);
+    head.appendChild(rec.refusal ? tag('REFUSED', 'err') : tag('READ OK', 'ok'));
+    li.appendChild(head);
+
+    li.appendChild(el('div', 'struct', structureLine(rec)));
+
+    if (rec.refusal) {
+      const d = el('div', 'line err');
+      d.appendChild(tag('REFUSED', 'err'));
+      d.appendChild(document.createTextNode(' ' + rec.refusal.cls + (rec.refusal.detail ? ' (' + rec.refusal.detail + ')' : '')));
+      li.appendChild(d);
+    } else {
+      for (const w of rec.warnings) {
+        const d = el('div', 'line warn');
+        d.appendChild(tag('WARNING', 'warn'));
+        d.appendChild(document.createTextNode(' ' + w));
+        li.appendChild(d);
+      }
+      if (rec.warnings.length === 0) {
+        const d = el('div', 'line ok');
+        d.appendChild(tag('OK', 'ok'));
+        d.appendChild(document.createTextNode(' nothing outside the page tree to lose in this file'));
+        li.appendChild(d);
+      }
+
+      const ctrl = el('div', 'row');
+      const lab = el('label', null, 'Pages from ' + rec.name);
+      lab.setAttribute('for', 'range-' + rec.id);
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.id = 'range-' + rec.id;
+      inp.value = rec.range;
+      inp.setAttribute('placeholder', 'all, or 1-3,7,12-');
+      inp.addEventListener('change', () => { rec.range = inp.value; syncPlanForFile(rec); renderAll(); });
+      ctrl.appendChild(lab);
+      ctrl.appendChild(inp);
+      ctrl.appendChild(el('span', 'count', planFor(rec.id).length + ' selected of ' + rec.pages.length));
+      li.appendChild(ctrl);
+
+      if (rec.rangeError) {
+        const d = el('div', 'line err');
+        d.appendChild(tag('REFUSED', 'err'));
+        d.appendChild(document.createTextNode(' page range not understood: ' + rec.rangeError));
+        li.appendChild(d);
+      }
+    }
+
+    const btns = el('div', 'row');
+    const up = el('button', null, 'Move file up');
+    up.setAttribute('aria-label', 'Move file ' + rec.name + ' earlier in the stack');
+    up.disabled = idx === 0;
+    up.addEventListener('click', () => { moveFile(idx, -1); });
+    const dn = el('button', null, 'Move file down');
+    dn.setAttribute('aria-label', 'Move file ' + rec.name + ' later in the stack');
+    dn.disabled = idx === state.files.length - 1;
+    dn.addEventListener('click', () => { moveFile(idx, 1); });
+    const rm = el('button', null, 'Remove file');
+    rm.setAttribute('aria-label', 'Remove file ' + rec.name);
+    rm.addEventListener('click', () => {
+      state.files = state.files.filter(f => f.id !== rec.id);
+      state.plan = state.plan.filter(p => p.fid !== rec.id);
+      /* removing the last file one at a time must land in the same state as
+         Remove all files: the before-any-file state, results region included */
+      if (state.files.length === 0) clear(elResults);
+      renderAll();
+    });
+    btns.appendChild(up); btns.appendChild(dn); btns.appendChild(rm);
+    li.appendChild(btns);
+
+    elFiles.appendChild(li);
+  });
+}
+
+function moveFile(idx, dir) {
+  const j = idx + dir;
+  if (j < 0 || j >= state.files.length) return;
+  const a = state.files[idx];
+  state.files[idx] = state.files[j];
+  state.files[j] = a;
+  /* the output order follows the file stack for the pages of the moved files */
+  const order = new Map();
+  state.files.forEach((f, i) => order.set(f.id, i));
+  state.plan.sort((p, q) => (order.get(p.fid) - order.get(q.fid)));
+  renderAll();
+}
+
+function movePlan(idx, dir) {
+  const j = idx + dir;
+  if (idx < 0 || idx >= state.plan.length || j < 0 || j >= state.plan.length) return;
+  const a = state.plan[idx];
+  state.plan[idx] = state.plan[j];
+  state.plan[j] = a;
+  renderAll();
+}
+
+function renderPlan() {
+  clear(elPlan);
+  const n = state.plan.length;
+  elPlanCount.textContent = '(' + n + (n === 1 ? ' page selected)' : ' pages selected)');
+  const shown = Math.min(n, LIM.PLAN_RENDER);
+  for (let i = 0; i < shown; i++) {
+    const p = state.plan[i];
+    const rec = fileById(p.fid);
+    if (!rec) continue;
+    const ident = 'page ' + (p.pageIndex + 1) + ' of ' + rec.name;
+    const li = el('li');
+    const row = el('div', 'row');
+    row.appendChild(el('span', 'grow', (i + 1) + '. ' + ident + (p.rotate ? '  (rotated ' + normaliseRotate(p.rotate) + ' degrees)' : '')));
+
+    const mk = (label, aria, fn, disabled) => {
+      const b = el('button', null, label);
+      b.setAttribute('aria-label', aria);
+      if (disabled) b.disabled = true;
+      b.addEventListener('click', fn);
+      return b;
+    };
+    row.appendChild(mk('Up', 'Move ' + ident + ' up', () => { movePlan(i, -1); }, i === 0));
+    /* disabled at the rendered boundary too: a swap with an unrendered row
+       would move the page out of the list with no way to move it back */
+    row.appendChild(mk('Down', 'Move ' + ident + ' down', () => { movePlan(i, 1); }, i === n - 1 || i === shown - 1));
+    row.appendChild(mk('Rotate left', 'Rotate ' + ident + ' 90 degrees counter clockwise', () => { p.rotate = normaliseRotate(p.rotate - 90); renderAll(); }));
+    row.appendChild(mk('Rotate right', 'Rotate ' + ident + ' 90 degrees clockwise', () => { p.rotate = normaliseRotate(p.rotate + 90); renderAll(); }));
+    row.appendChild(mk('Remove', 'Remove ' + ident + ' from the output', () => {
+      state.plan.splice(i, 1);
+      renderAll();
+    }));
+    li.appendChild(row);
+    elPlan.appendChild(li);
+  }
+  if (n > shown) {
+    const li = el('li');
+    li.appendChild(el('div', 'line warn', 'Showing the first ' + shown + ' of ' + n + ' selected pages. All ' + n + ' are included in the build. Reordering is limited to these ' + shown + ' rows, so the last one has no Down button. Narrow a page range to edit individual pages.'));
+    elPlan.appendChild(li);
+  }
+}
+
+/* Re-rendering a list would otherwise drop keyboard focus on the floor, so the
+   control is found again by its accessible name and refocused. */
+function renderAll() {
+  const active = document.activeElement;
+  const wantId = active && active.id && active.id.indexOf('range-') === 0 ? active.id : null;
+  const wantLabel = !wantId && active && active.getAttribute ? active.getAttribute('aria-label') : null;
+
+  renderFiles();
+  renderPlan();
+  const can = state.plan.length > 0 && !state.busy;
+  elBuild.disabled = !can;
+  elBuild.setAttribute('aria-disabled', can ? 'false' : 'true');
+
+  if (wantId) {
+    const n = document.getElementById(wantId);
+    if (n) n.focus();
+    return;
+  }
+  if (!wantLabel) return;
+  const buttons = document.querySelectorAll('#files button, #plan button');
+  for (let i = 0; i < buttons.length && i < 4000; i++) {
+    if (buttons[i].getAttribute('aria-label') === wantLabel && !buttons[i].disabled) {
+      buttons[i].focus();
+      return;
+    }
+  }
+}
+
+function say(nodes) {
+  clear(elResults);
+  for (const n of nodes) elResults.appendChild(n);
+}
+
+async function addFiles(list) {
+  const arr = Array.prototype.slice.call(list || []);
+  if (!arr.length) return;
+  if (state.files.length + arr.length > LIM.FILES) {
+    say([(function () {
+      const d = el('div', 'line err');
+      d.appendChild(tag('REFUSED', 'err'));
+      d.appendChild(document.createTextNode(' this page holds at most ' + LIM.FILES + ' files at once'));
+      return d;
+    })()]);
+    return;
+  }
+  state.busy = true;
+  renderAll();
+  say([el('div', 'line', 'Reading ' + arr.length + (arr.length === 1 ? ' file...' : ' files...'))]);
+  /* every held file pins its whole buffer plus its parsed object cache until it
+     is removed, so the sum is budgeted, not just each file on its own */
+  let held = 0;
+  for (const f of state.files) held += f.size;
+  const overBudget = [];
+  for (const f of arr) {
+    let bytes;
+    try {
+      bytes = new Uint8Array(await f.arrayBuffer());
+    } catch (e) {
+      const rec = { id: state.nextId++, name: f.name || 'file', size: 0, doc: null, pages: [], warnings: [], range: 'all', rangeError: '', refusal: { cls: RCLASS.UNHANDLED, detail: 'the browser could not read this file' } };
+      state.files.push(rec);
+      continue;
+    }
+    if (held + bytes.length > LIM.HELD_BYTES) {
+      overBudget.push(f.name || 'file');
+      continue;
+    }
+    held += bytes.length;
+    const rec = await analyse(f.name || 'file', bytes);
+    state.files.push(rec);
+    if (rec.doc) syncPlanForFile(rec);
+  }
+  state.busy = false;
+  renderAll();
+  const refused = state.files.filter(f => f.refusal).length;
+  const out = [el('div', 'line', state.files.length + ' file(s) held, ' + state.plan.length + ' page(s) selected.')];
+  if (overBudget.length) {
+    const d = el('div', 'line err');
+    d.appendChild(tag('REFUSED', 'err'));
+    d.appendChild(document.createTextNode(' this page holds at most ' + LIM.HELD_BYTES +
+      ' bytes of PDF at once, so it did not take: ' + overBudget.join(', ') + '. Remove a file and add it again.'));
+    out.push(d);
+  }
+  if (refused) {
+    const d = el('div', 'line err');
+    d.appendChild(tag('REFUSED', 'err'));
+    d.appendChild(document.createTextNode(' ' + refused + ' file(s) refused. Each refusal is named in the file list above.'));
+    out.push(d);
+  }
+  say(out);
+}
+
+async function doBuild() {
+  if (state.plan.length === 0) {
+    say([el('div', 'line warn', 'No pages selected. Add a PDF and choose at least one page.')]);
+    return;
+  }
+  state.busy = true;
+  renderAll();
+  say([el('div', 'line', 'Building...')]);
+  try {
+    const assemble = () => {
+      const dkOf = new Map();
+      const docs = [];
+      const entries = [];
+      for (const p of state.plan) {
+        const rec = fileById(p.fid);
+        if (!rec || !rec.doc) continue;
+        if (!dkOf.has(rec.id)) { dkOf.set(rec.id, docs.length); docs.push(rec); }
+        const page = rec.pages[p.pageIndex];
+        if (!page) continue;
+        entries.push({ dk: dkOf.get(rec.id), doc: rec.doc, page: page, rotateDelta: p.rotate });
+      }
+      return { docs: docs, entries: entries };
+    };
+
+    /* Damage that only surfaces while a page closure is copied is refused BY
+       NAME and that file is dropped, then the rest still build. A partial run
+       is expected; an all or nothing abort naming no file is not. */
+    let docs = [];
+    let res = null;
+    for (let attempt = 0; ; attempt++) {
+      const asm = assemble();
+      docs = asm.docs;
+      if (!asm.entries.length) {
+        state.busy = false; renderAll();
+        const none = [el('div', 'line warn', 'No pages selected. Add a PDF and choose at least one page.')];
+        for (const rf of state.files) if (rf.refusal) none.push(refusalLine(rf, '. It contributed no pages.'));
+        say(none);
+        return;
+      }
+      try {
+        res = await buildPdf(asm.entries);
+        break;
+      } catch (e) {
+        const bad = (e instanceof Refusal && e.dk !== undefined) ? docs[e.dk] : null;
+        if (!bad || attempt >= LIM.FILES) throw e;
+        bad.refusal = { cls: e.cls, detail: e.detail };
+        bad.doc = null;
+        bad.pages = [];
+        bad.warnings = [];
+        state.plan = state.plan.filter(p => p.fid !== bad.id);
+      }
+    }
+    const out = [];
+    const okLine = el('div', 'line ok');
+    okLine.appendChild(tag('BUILT', 'ok'));
+    okLine.appendChild(document.createTextNode(' ' + res.pageCount + ' page(s), ' + fmtBytes(res.bytes.length) + ', ' + res.objectCount + ' objects, from ' + docs.length + ' source file(s).'));
+    out.push(okLine);
+
+    const lost = [];
+    for (const rec of docs) for (const w of rec.warnings) lost.push(rec.name + ': ' + w);
+    if (lost.length) {
+      out.push(el('div', 'line warn', 'Source structures not carried across:'));
+      for (const l of lost) {
+        const d = el('div', 'line warn');
+        d.appendChild(tag('WARNING', 'warn'));
+        d.appendChild(document.createTextNode(' ' + l));
+        out.push(d);
+      }
+    } else {
+      const d = el('div', 'line ok');
+      d.appendChild(tag('OK', 'ok'));
+      d.appendChild(document.createTextNode(' no source structure outside the page tree was present, so nothing was lost.'));
+      out.push(d);
+    }
+    if (res.droppedPageRefs > 0) {
+      const d = el('div', 'line warn');
+      d.appendChild(tag('WARNING', 'warn'));
+      d.appendChild(document.createTextNode(' ' + res.droppedPageRefs + ' reference(s) to pages not included were replaced with null. Internal links to those pages will not work.'));
+      out.push(d);
+    }
+    /* the refusal lines stay visible above the download link: a partial run is
+       fine and expected, but a refused file is never silently dropped */
+    for (const rf of state.files) {
+      if (!rf.refusal) continue;
+      out.push(refusalLine(rf, '. It contributed no pages to this output.'));
+    }
+
+    const blob = new Blob([res.bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const base = docs.length === 1 ? safeName(docs[0].name).replace(/\.pdf$/i, '') : 'merged';
+    const fn = base + '-' + res.pageCount + 'p.pdf';
+    const a = el('a', 'dl', 'Download ' + fn);
+    a.href = url;
+    a.download = fn;
+    out.push(a);
+    say(out);
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 120000);
+  } catch (e) {
+    const d = el('div', 'line err');
+    d.appendChild(tag('REFUSED', 'err'));
+    const msg = e instanceof Refusal
+      ? e.cls + (e.detail ? ' (' + e.detail + ')' : '')
+      : RCLASS.UNHANDLED + ': ' + String(e && e.message ? e.message : e).slice(0, 200);
+    d.appendChild(document.createTextNode(' build stopped, nothing was written. ' + msg));
+    say([d]);
+  } finally {
+    state.busy = false;
+    renderAll();
+  }
+}
+
+elPicker.addEventListener('change', () => { addFiles(elPicker.files); elPicker.value = ''; });
+elBuild.addEventListener('click', doBuild);
+elClear.addEventListener('click', () => {
+  state.files = [];
+  state.plan = [];
+  clear(elResults);
+  renderAll();
+});
+['dragenter', 'dragover'].forEach(ev => elDrop.addEventListener(ev, e => { e.preventDefault(); elDrop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => elDrop.addEventListener(ev, e => { e.preventDefault(); elDrop.classList.remove('over'); }));
+elDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  if (e.dataTransfer && e.dataTransfer.files) addFiles(e.dataTransfer.files);
+});
+
+/* ---------- self test ---------- */
+function stLine(name, pass, detail) {
+  const d = el('div', 'line ' + (pass ? 'ok' : 'err'));
+  d.appendChild(tag(pass ? 'PASS' : 'FAIL', pass ? 'ok' : 'err'));
+  d.appendChild(document.createTextNode(' ' + name + (detail ? ' :: ' + detail : '')));
+  return d;
+}
+
+async function readObj4Text(reverse) {
+  const doc = new Doc(b64ToBytes(FX.HYBRID), { reversePrecedence: reverse });
+  await doc.load();
+  const o = await doc.get(4);
+  if (!(o instanceof PStream)) throw new Error('object 4 is not a stream');
+  const bytes = await doc.decodeStream(o);
+  return bytesToStr(bytes, 0, bytes.length);
+}
+
+async function runSelfTest() {
+  clear(elStOut);
+  const results = [];
+  const add = (name, pass, detail) => { results.push({ name: name, pass: pass, detail: detail || '' }); };
+
+  /* 1. hybrid precedence: the /XRefStm revision must win */
+  let freshText = '';
+  try {
+    freshText = await readObj4Text(false);
+    add('hybrid /XRefStm precedence: object 4 resolves to the FRESH stream',
+      freshText.indexOf('FRESH') >= 0 && freshText.indexOf('STALE') < 0,
+      'decoded content stream draws "' + (freshText.indexOf('FRESH') >= 0 ? 'FRESH' : (freshText.indexOf('STALE') >= 0 ? 'STALE' : '?')) + '"');
+  } catch (e) {
+    add('hybrid /XRefStm precedence: object 4 resolves to the FRESH stream', false, String(e.message || e));
+  }
+
+  /* 2. POSITIVE CONTROL. The same fixture parsed with the two merge steps
+        swapped MUST resolve to STALE. If it also resolves to FRESH then the
+        fixture cannot discriminate and this control could never fail, which
+        makes it worthless. */
+  try {
+    const staleText = await readObj4Text(true);
+    const discriminates = staleText.indexOf('STALE') >= 0;
+    add('POSITIVE CONTROL, must be rejected: the reversed merge order resolves object 4 to STALE, so the fixture can fail',
+      discriminates,
+      discriminates ? 'reversed order correctly produced STALE, so test 1 is a real check'
+        : 'reversed order also produced FRESH, so the fixture does not discriminate');
+  } catch (e) {
+    add('POSITIVE CONTROL, must be rejected: the reversed merge order resolves object 4 to STALE, so the fixture can fail', false, String(e.message || e));
+  }
+
+  /* 3. POSITIVE CONTROL. A deliberately wrong assertion. */
+  {
+    const wrong = normaliseRotate(450) === 180;
+    add('POSITIVE CONTROL, must be rejected: the false claim that /Rotate 450 normalises to 180',
+      wrong === false,
+      'the checker returned ' + normaliseRotate(450) + ', so the false claim was correctly rejected');
+  }
+
+  /* 4. /Annots survive a rebuild */
+  try {
+    const doc = new Doc(b64ToBytes(FX.ANNOTS));
+    await doc.load();
+    const pages = await doc.pages();
+    const srcAnnots = await doc.deref(pages[0].dict.get('Annots'));
+    const built = await buildPdf([{ dk: 0, doc: doc, page: pages[0], rotateDelta: 0 }]);
+    const rt = new Doc(built.bytes);
+    await rt.load();
+    const rp = await rt.pages();
+    const outAnnots = await rt.deref(rp[0].dict.get('Annots'));
+    const ok = Array.isArray(srcAnnots) && Array.isArray(outAnnots) && outAnnots.length === srcAnnots.length && outAnnots.length === 2;
+    add('page level /Annots still present after a rebuild', ok,
+      'source ' + (Array.isArray(srcAnnots) ? srcAnnots.length : 'none') + ', output ' + (Array.isArray(outAnnots) ? outAnnots.length : 'none'));
+  } catch (e) {
+    add('page level /Annots still present after a rebuild', false, String(e.message || e));
+  }
+
+  /* 5. /Encrypt is refused, never built */
+  try {
+    const doc = new Doc(b64ToBytes(FX.ENCRYPTED));
+    await doc.load();
+    let cls = 'none';
+    if (doc.trailer.has('Encrypt')) cls = RCLASS.ENCRYPTED;
+    add('a file with /Encrypt is refused with the encrypted class', cls === RCLASS.ENCRYPTED, cls);
+  } catch (e) {
+    add('a file with /Encrypt is refused with the encrypted class', false, String(e.message || e));
+  }
+
+  /* 6. no startxref is refused with the damaged xref class */
+  try {
+    const doc = new Doc(b64ToBytes(FX.NOXREF));
+    await doc.load();
+    add('a file with no startxref is refused with the damaged cross reference class', false, 'it loaded instead of refusing');
+  } catch (e) {
+    const ok = e instanceof Refusal && e.cls === RCLASS.BAD_XREF && e.detail === 'no startxref found';
+    add('a file with no startxref is refused with the damaged cross reference class', ok, (e.cls || 'threw') + (e.detail ? ' (' + e.detail + ')' : ''));
+  }
+
+  /* 7. a /Predictor 12 cross reference stream decodes, and every decoded
+        type 1 offset lands on "<N> <G> obj" */
+  try {
+    const doc = new Doc(b64ToBytes(FX.PRED12));
+    await doc.load();
+    let okc = 0, bad = 0;
+    for (const pair of doc.map) {
+      const num = pair[0], e = pair[1];
+      if (e.type !== 1) continue;
+      try {
+        const lx = new Lexer(doc.b, e.off);
+        const a = lx.parse(); lx.parse();
+        if (a === num && lx.tokenWord() === 'obj') okc++; else bad++;
+      } catch (err) { bad++; }
+    }
+    add('/Predictor 12 cross reference stream decodes and every type 1 offset lands on "N G obj"',
+      bad === 0 && okc === 7, okc + ' entries verified, ' + bad + ' bad');
+  } catch (e) {
+    add('/Predictor 12 cross reference stream decodes and every type 1 offset lands on "N G obj"', false, String(e.message || e));
+  }
+
+  /* 8. rotate normalisation */
+  {
+    const a = normaliseRotate(450), b = normaliseRotate(-90), c = normaliseRotate(0);
+    add('/Rotate 450, -90 and 0 normalise to 90, 270 and 0',
+      a === 90 && b === 270 && c === 0, a + ', ' + b + ', ' + c);
+  }
+
+  /* 9. a hostile dictionary key cannot pollute a prototype */
+  {
+    let polluted = false;
+    try {
+      const bytes = strToBytes('<< /__proto__ << /polluted 1 >> /constructor 2 /prototype 3 >>');
+      const d = new Lexer(bytes, 0).parse();
+      polluted = ({}).polluted !== undefined || Object.prototype.polluted !== undefined;
+      const isMap = d instanceof Map && d.has('__proto__');
+      add('a /__proto__ dictionary key is stored in a Map and pollutes no prototype', !polluted && isMap,
+        'parsed into a Map with ' + (d instanceof Map ? d.size : 0) + ' keys, Object.prototype.polluted is ' + String(Object.prototype.polluted));
+    } catch (e) {
+      add('a /__proto__ dictionary key is stored in a Map and pollutes no prototype', false, String(e.message || e));
+    }
+  }
+
+  /* 10. a text file renamed .pdf is refused as not a PDF */
+  try {
+    const doc = new Doc(strToBytes('this is a plain text file, not a document at all\n'));
+    await doc.load();
+    add('a text file is refused with the not a PDF class', false, 'it loaded instead of refusing');
+  } catch (e) {
+    const ok = e instanceof Refusal && e.cls === RCLASS.NOT_PDF;
+    add('a text file is refused with the not a PDF class', ok, e.cls || 'threw');
+  }
+
+  /* 11. round trip: rebuild one rotated page and read the output back */
+  try {
+    const doc = new Doc(b64ToBytes(FX.PRED12));
+    await doc.load();
+    const pages = await doc.pages();
+    const built = await buildPdf([{ dk: 0, doc: doc, page: pages[1], rotateDelta: 90 }]);
+    const rt = new Doc(built.bytes);
+    await rt.load();
+    const rp = await rt.pages();
+    const rot = await rt.deref(rp[0].dict.get('Rotate'));
+    const mb = await rt.deref(rp[0].dict.get('MediaBox'));
+    const okmb = Array.isArray(mb) && mb.length === 4 && mb[2] === 400 && mb[3] === 400;
+    add('rebuild of one page: output re-parses, 1 page, source /Rotate 90 plus 90 gives 180, inherited /MediaBox resolved',
+      rp.length === 1 && rot === 180 && okmb,
+      rp.length + ' page, /Rotate ' + rot + ', /MediaBox ' + (Array.isArray(mb) ? '[' + mb.join(' ') + ']' : 'missing'));
+  } catch (e) {
+    add('rebuild of one page: output re-parses, 1 page, source /Rotate 90 plus 90 gives 180, inherited /MediaBox resolved', false, String(e.message || e));
+  }
+
+  /* 12. two documents that both use object number 3 do not cross wire */
+  try {
+    const d1 = new Doc(b64ToBytes(FX.PRED12)); await d1.load();
+    const d2 = new Doc(b64ToBytes(FX.ANNOTS)); await d2.load();
+    const p1 = await d1.pages(), p2 = await d2.pages();
+    const built = await buildPdf([
+      { dk: 0, doc: d1, page: p1[0], rotateDelta: 0 },
+      { dk: 1, doc: d2, page: p2[0], rotateDelta: 0 }
+    ]);
+    const rt = new Doc(built.bytes); await rt.load();
+    const rp = await rt.pages();
+    const a0 = await rt.deref(rp[0].dict.get('Annots'));
+    const a1 = await rt.deref(rp[1].dict.get('Annots'));
+    const mb0 = await rt.deref(rp[0].dict.get('MediaBox'));
+    const mb1 = await rt.deref(rp[1].dict.get('MediaBox'));
+    const ok = rp.length === 2 && a0 === undefined && Array.isArray(a1) && a1.length === 2
+      && Array.isArray(mb0) && mb0[2] === 400 && Array.isArray(mb1) && mb1[2] === 300;
+    add('merging two documents that both use object number 3 does not cross wire them', ok,
+      'page 1 MediaBox width ' + (Array.isArray(mb0) ? mb0[2] : '?') + ' with no /Annots, page 2 MediaBox width ' + (Array.isArray(mb1) ? mb1[2] : '?') + ' with ' + (Array.isArray(a1) ? a1.length : 0) + ' /Annots');
+  } catch (e) {
+    add('merging two documents that both use object number 3 does not cross wire them', false, String(e.message || e));
+  }
+
+  /* 13. an empty selection refuses rather than writing a partial file */
+  try {
+    await buildPdf([]);
+    add('building with zero selected pages refuses rather than writing a file', false, 'it returned a file');
+  } catch (e) {
+    add('building with zero selected pages refuses rather than writing a file', true, String(e.message || e));
+  }
+
+  /* 14. the structure line answers "were object streams used" from the cross
+         reference map, not from a lazy decode counter */
+  try {
+    const doc = new Doc(b64ToBytes(FX.OBJSTM));
+    await doc.load();
+    const flagAfterLoad = doc.stats.usesObjStm;
+    const decodedSoFar = doc.stats.objStm;
+    const plain = new Doc(b64ToBytes(FX.PRED12));
+    await plain.load();
+    const pages = await doc.pages();
+    add('object streams are reported from the cross reference map, before anything dereferences one',
+      flagAfterLoad === true && decodedSoFar === 0 && plain.stats.usesObjStm === false && pages.length === 1,
+      'object stream file reports ' + (flagAfterLoad ? 'yes' : 'no') + ' with ' + decodedSoFar +
+      ' streams decoded at that point, plain file reports ' + (plain.stats.usesObjStm ? 'yes' : 'no'));
+  } catch (e) {
+    add('object streams are reported from the cross reference map, before anything dereferences one', false, String(e.message || e));
+  }
+
+  /* 15. an unreadable /XRefStm must be refused. Falling back to the classic
+         table of a hybrid revision resolves contested objects to superseded
+         copies, which is the same corruption check 1 exists to prevent. */
+  try {
+    const bend = (v) => {
+      const b = b64ToBytes(FX.HYBRID);
+      const at = lastIndexOfSeq(b, '/XRefStm ');
+      const digits = strToBytes(v);
+      for (let i = 0; i < digits.length; i++) b[at + 9 + i] = digits[i];
+      return b;
+    };
+    const cases = [['999', 'an offset past the end of the file'], ['247', 'an offset pointing at an object that is not an /XRef stream']];
+    const details = [];
+    let allRefused = true;
+    for (const c of cases) {
+      let outcome;
+      try {
+        const doc = new Doc(bend(c[0]));
+        await doc.load();
+        const o = await doc.get(4);
+        const txt = o instanceof PStream ? bytesToStr(await doc.decodeStream(o), 0, 64) : '';
+        outcome = 'loaded and resolved object 4 to ' + (txt.indexOf('STALE') >= 0 ? 'STALE' : txt.indexOf('FRESH') >= 0 ? 'FRESH' : 'something else');
+        allRefused = false;
+      } catch (e) {
+        const ok = e instanceof Refusal && e.cls === RCLASS.BAD_XREF;
+        if (!ok) allRefused = false;
+        outcome = ok ? 'refused' : 'threw ' + String(e.message || e);
+      }
+      details.push(c[1] + ': ' + outcome);
+    }
+    add('a hybrid revision whose /XRefStm offset does not resolve to a cross reference stream is refused with the damaged cross reference class, never resolved from the stale classic table',
+      allRefused, details.join('; '));
+  } catch (e) {
+    add('a hybrid revision whose /XRefStm offset does not resolve to a cross reference stream is refused with the damaged cross reference class, never resolved from the stale classic table', false, String(e.message || e));
+  }
+
+  /* 16b. the third /XRefStm route. Check 15 pins the two routes that report the
+          damaged cross reference class; a payload that will not inflate reports the
+          inflate class instead, so the two published trigger rows partition the
+          input rather than overlap on it. Either way the file is refused by name
+          and the stale classic table is never used. */
+  {
+    const LBL = 'a hybrid revision whose /XRefStm will not inflate is refused under the inflate class, never resolved from the stale classic table';
+    try {
+      const b = b64ToBytes(FX.HYBRID);
+      const at = indexOfSeq(b, '/Type /XRef', 0);
+      const st = indexOfSeq(b, 'stream\n', at) + 7;
+      if (at < 0 || st < 7) throw new Error('fixture does not carry a cross reference stream');
+      for (let i = 2; i < 13; i++) b[st + i] = 0x41;   /* keep the zlib header, wreck the payload */
+      let outcome, ok = false;
+      try {
+        const doc = new Doc(b);
+        await doc.load();
+        const o = await doc.get(4);
+        const txt = o instanceof PStream ? bytesToStr(await doc.decodeStream(o), 0, 64) : '';
+        outcome = 'loaded and resolved object 4 to ' + (txt.indexOf('STALE') >= 0 ? 'STALE' : txt.indexOf('FRESH') >= 0 ? 'FRESH' : 'something else');
+      } catch (e) {
+        ok = e instanceof Refusal && e.cls === RCLASS.INFLATE;
+        outcome = e instanceof Refusal ? 'refused as ' + e.cls : 'threw ' + String(e.message || e);
+      }
+      add(LBL, ok, outcome);
+    } catch (e) {
+      add(LBL, false, String(e.message || e));
+    }
+  }
+
+  /* 16. ISO 32000-1 section 7.3.3 has no exponential number form */
+  {
+    const big = fmtNum(1e21);
+    const bigger = fmtNum(1.2345678901234569e+23);
+    const ordinary = fmtNum(1e20);
+    const plain = /^-?[0-9]+$/;
+    add('a very large integer is written as a plain digit run, never in exponential form',
+      plain.test(big) && plain.test(bigger) && ordinary === '100000000000000000000',
+      '1e21 writes as ' + big.slice(0, 24) + ', 1.2345678901234569e23 writes as ' + bigger.slice(0, 26));
+  }
+
+  const passed = results.filter(r => r.pass).length;
+  const head = el('div', 'line ' + (passed === results.length ? 'ok' : 'err'));
+  head.appendChild(tag(passed === results.length ? 'ALL PASS' : 'FAILURES', passed === results.length ? 'ok' : 'err'));
+  head.appendChild(document.createTextNode(' ' + passed + ' of ' + results.length + ' checks passed.'));
+  elStOut.appendChild(head);
+  for (const r of results) elStOut.appendChild(stLine(r.name, r.pass, r.detail));
+}
+
+elSt.addEventListener('click', () => { runSelfTest(); });
+
+renderAll();
+</script>
+</body>
+</html>

@@ -110,4 +110,4 @@ This project is independent and unaffiliated with Adobe, with the ISO, with pypd
 
 ## License
 
-MIT. Copyright (c) 2026 0xelitesystem.
+MIT. Copyright (c) 2026 RBL Industries LLC.

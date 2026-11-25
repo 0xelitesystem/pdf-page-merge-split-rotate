@@ -105,7 +105,7 @@ This project is independent and unaffiliated with Adobe, with the ISO, with pypd
 ## Related
 
 - https://github.com/0xelitesystem/image-compressor
-- https://github.com/0xelitesystem/image-to-data-uri
+- https://github.com/0xelitesystem/image-to-base64-snippet
 - https://github.com/0xelitesystem/hash-generator
 
 ## License

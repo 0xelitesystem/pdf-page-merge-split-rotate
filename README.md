@@ -1,8 +1,8 @@
-# PDF Merge and Split
+# PDF Page Merge Split Rotate
 
 Merge, split, reorder and rotate PDF pages entirely in your browser. Parses the real cross reference chain, names every file it refuses, and lists per file the structures it does not carry across before you download.
 
-**Live demo:** https://0xelitesystem.github.io/pdf-merge-and-split/
+**Live demo:** https://0xelitesystem.github.io/pdf-page-merge-split-rotate/
 
 A sibling repo, `watermarks-remover`, strips provenance metadata from several formats including PDF. It never resolves a page tree, an xref chain or an object stream, and this tool never touches metadata, so the two are not overlapping entrances. Say this plainly and once: **qpdf and pdftk are strictly more capable than this page.** They handle encryption, damaged cross reference reconstruction and linearization, none of which this tool attempts. The reason to use this instead is that the bytes never leave the machine, not that the feature set is larger.
 
@@ -68,8 +68,8 @@ Everything runs in your browser. Nothing is uploaded, stored or transmitted. The
 ## Run locally
 
 ```
-git clone https://github.com/0xelitesystem/pdf-merge-and-split.git
-cd pdf-merge-and-split
+git clone https://github.com/0xelitesystem/pdf-page-merge-split-rotate.git
+cd pdf-page-merge-split-rotate
 ```
 
 Open `index.html` in a browser. That is the whole thing, and it works from the local file system with no server. If you prefer to serve it:

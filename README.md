@@ -104,9 +104,9 @@ This project is independent and unaffiliated with Adobe, with the ISO, with pypd
 
 ## Related
 
-- https://github.com/0xelitesystem/image-compressor
+- https://github.com/0xelitesystem/local-image-shrinker
 - https://github.com/0xelitesystem/image-to-base64-snippet
-- https://github.com/0xelitesystem/hash-generator
+- https://github.com/0xelitesystem/md5-sha-hash-calculator
 
 ## License
 
